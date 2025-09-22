@@ -1,0 +1,4 @@
+/.idea/
+/nycdb.duckdb
+__pycache__/
+*.pyc
