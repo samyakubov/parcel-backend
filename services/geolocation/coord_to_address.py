@@ -2,7 +2,7 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 import ssl
 import certifi
-from App.LoggerConfig import logger
+from logger_config import logger
 
 def coord_to_address(latitude: float, longitude: float):
     try:

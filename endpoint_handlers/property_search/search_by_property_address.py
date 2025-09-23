@@ -1,9 +1,9 @@
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaint_data
 from endpoint_handlers.property_search.helper_functions.get_current_home_owner import get_current_home_owner
+from endpoint_handlers.property_search.helper_functions.get_job_filings import get_job_filings
 from endpoint_handlers.property_search.helper_functions.get_last_sold import get_last_sold
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import get_previous_home_owners
-from endpoint_handlers.property_search.helper_functions.get_job_filings import get_pulled_permits
 from endpoint_handlers.property_search.helper_functions.get_violations import get_violation_data
 from endpoint_handlers.property_search.helper_functions.get_zoning_details import get_zoning_details
 from logger_config import logger
@@ -17,7 +17,7 @@ def search_by_property_address(address: str):
             return {"message": "No address was provided", "status_code": 400}
 
 
-        transactions_df = db.execute("SELECT * FROM AcrisPropertyAggregate WHERE search_prop_address = ? ORDER BY documentid", (address))
+        transactions_df = db.execute("SELECT * FROM vm_acris_index WHERE search_prop_address = ? ORDER BY documentid", (address))
 
         if transactions_df.empty:
             logger.error("No records found for %s" % address)
@@ -38,7 +38,7 @@ def search_by_property_address(address: str):
                     "previous_owners": previous_owner_data,
                 },
                 "records": transactions_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
-                "permits": get_pulled_permits(transactions_df.iloc[0].bbl),
+                "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
                 "violations": get_violation_data(transactions_df.iloc[0].bbl),
                 "complaints": get_complaint_data(address),
                 "zoning": get_zoning_details(transactions_df.iloc[0].bbl),
