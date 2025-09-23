@@ -14,7 +14,7 @@ def get_last_sold(bbl: str):
         deeds_df = _get_deed_records(bbl)
 
         if deeds_df.empty:
-            logger.warning(f"No deed records found for BBL: {bbl}")
+            logger.warning(f"No sale records found for BBL: {bbl}")
             return []
 
         latest_deed = deeds_df.iloc[0]

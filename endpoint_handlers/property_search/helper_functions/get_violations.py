@@ -16,8 +16,10 @@ def get_violation_data(bbl:str):
                                                 respondentname as respondent_name, 
                                                 house_number, 
                                                 street, 
-                                                city, zip 
-                                         FROM aggregated_acris_violations WHERE bbl = ?""", [bbl])
+                                                city, 
+                                                zip 
+                                         FROM aggregated_acris_violations WHERE bbl = ?
+                                      """, [bbl])
         if violations_df.empty:
             return []
 

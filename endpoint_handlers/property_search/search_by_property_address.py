@@ -17,32 +17,37 @@ def search_by_property_address(address: str):
             return {"message": "No address was provided", "status_code": 400}
 
 
-        transactions_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
-        transactions_df = transactions_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
+        records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
+        records_df = records_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
 
-        if transactions_df.empty:
-            logger.error("No records found for %s" % address)
-            return {"message": "No records found", "status_code": 404}
+        if records_df.empty:
+            parts = address.strip().split(' ', 1)
+            house_number, street = parts
+            records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid", [house_number, f"{street.upper()}%"])
+            if records_df.empty:
+                logger.error("No records found for %s" % address)
+                return {"message": "No records found", "status_code": 404}
 
-        if transactions_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
-            current_owner_data = get_building_shareholders(transactions_df.iloc[0].bbl)
+
+        if records_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
+            current_owner_data = get_building_shareholders(records_df.iloc[0].bbl)
             previous_owner_data = []
         else:
-            current_owner_data = get_current_home_owner(transactions_df.iloc[0].bbl)
-            all_previous_data = get_previous_home_owners(transactions_df.iloc[0].bbl)
+            current_owner_data = get_current_home_owner(records_df.iloc[0].bbl)
+            all_previous_data = get_previous_home_owners(records_df.iloc[0].bbl)
             previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
 
         return {
-                "last_sold_for": get_last_sold(transactions_df.iloc[0].bbl),
+                "last_sold_for": get_last_sold(records_df.iloc[0].bbl),
                 "owners": {
                     "current_owners": current_owner_data,
                     "previous_owners": previous_owner_data,
                 },
-                "records": transactions_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
-                "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
-                "violations": get_violation_data(transactions_df.iloc[0].bbl),
+                "records": records_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
+                "job_filings": get_job_filings(records_df.iloc[0].bbl),
+                "violations": get_violation_data(records_df.iloc[0].bbl),
                 "complaints": get_complaint_data(address),
-                "zoning": get_zoning_data(transactions_df.iloc[0].bbl),
+                "zoning": get_zoning_data(records_df.iloc[0].bbl),
                 "coordinates": address_to_coord(address),
                 "status_code": 200,
             }
