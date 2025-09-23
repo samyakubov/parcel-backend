@@ -11,7 +11,7 @@ def get_building_shareholders(bbl: str):
         all_transactions_query = """
                                  SELECT party_name,
                                  CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS action, recordedfiled AS transaction_date
-                                 FROM vm_acris_index
+                                 FROM aggregated_acris_records
                                  WHERE bbl = ? AND doc_type = 'BOTH RPTT AND RETT' AND amount > 0 AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
                                  """
         all_transactions = db.execute_df(all_transactions_query, [bbl])

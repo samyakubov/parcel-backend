@@ -50,7 +50,7 @@ def _get_deed_records(bbl: str):
                 amount AS last_sold_price,
                 recordedfiled AS sale_date,
                 party_name AS deed_party_name
-            FROM vm_acris_index
+            FROM aggregated_acris_records
             WHERE bbl = ?
               AND doc_type = 'DEED'
               AND amount > 0
@@ -65,7 +65,7 @@ def _handle_low_price_case(bbl: str, deeds_df: pd.DataFrame):
     # Get latest mortgage per party
     mortgage_subquery = """
                         SELECT party_name AS mortgage_party_name, MAX(recordedfiled) AS latest_mortgage_date
-                        FROM vm_acris_index
+                        FROM aggregated_acris_records
                         WHERE bbl = ?
                           AND partytype_desc = 'MORTGAGOR/BORROWER'
                           AND doc_type = 'MORTGAGE'
