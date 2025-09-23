@@ -12,30 +12,29 @@ def get_complaint_data(address: str):
     house_number, street = parts
     street = street.strip().upper()
     try:
-        df = db.execute_df("SELECT * FROM dob_complaints WHERE housenumber = ? AND housestreet LIKE ? ORDER BY dateentered DESC", [str(house_number), f"{street}%"])
+        df = db.execute_df("""SELECT 
+                                complaintnumber as compliant_number,
+                                dateentered as date_entered,
+                                housenumber as house_number,
+                                specialdistrict as special_district,
+                                complaintcategory as complaint_category,
+                                dispositiondate as disposition_date,
+                                dispositioncode as disposition_code,
+                                inspectiondate as inspection_date,
+                                dobrundate as dobrun_date,
+                              FROM dob_complaints 
+                              WHERE 
+                                  housenumber = ? 
+                                AND housestreet LIKE ? ORDER BY dateentered DESC""", [str(house_number), f"{street}%"])
         if df.empty:
             return []
 
-        date_columns = ['dateentered', 'dispositiondate', 'inspectiondate', 'dobrundate']
+        date_columns = ['date_entered', 'disposition_date', 'inspection_date', 'dobrun_date']
         for col in date_columns:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col]).dt.strftime('%Y-%m-%d')
 
-        df = df.sort_values('dateentered', ascending=False)
-
-        df = df.rename(columns={
-            'complaintnumber': 'complaint_number',
-            'dateentered': 'date_entered',
-            'housenumber': 'house_number',
-            'housestreet': 'house_street',
-            'communityboard': 'community_board',
-            'specialdistrict': 'special_district',
-            'complaintcategory': 'complaint_category',
-            'dispositiondate': 'disposition_date',
-            'dispositioncode': 'disposition_code',
-            'inspectiondate': 'inspection_date',
-            'dobrundate': 'dobrun_date'
-        })
+        df = df.sort_values('date_entered', ascending=False)
 
         return df.to_dict(orient="records")
     except Exception as e:

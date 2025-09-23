@@ -4,14 +4,15 @@ from logger_config import logger
 
 def get_building_shareholders(bbl: str):
     try:
-
-        all_transactions_query = """
-                                 SELECT party_name as current_owner,
-                                 CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, recordedfiled AS transaction_date
-                                 FROM aggregated_acris_records
-                                 WHERE bbl = ? AND doc_type = 'BOTH RPTT AND RETT' AND amount > 0 AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
-                                 """
-        all_transactions = db.execute_df(all_transactions_query, [bbl])
+        all_transactions = db.execute_df("""
+                                        SELECT party_name as current_owner,
+                                        CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, recordedfiled AS transaction_date
+                                         FROM aggregated_acris_records
+                                         WHERE bbl = ? 
+                                           AND doc_type = 'BOTH RPTT AND RETT' 
+                                           AND amount > 0 
+                                           AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
+                                         """, [bbl])
 
         if all_transactions.empty:
             logger.warning(f"No transactions found for BBL: {bbl}")

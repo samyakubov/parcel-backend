@@ -20,7 +20,7 @@ def search_by_property_bbl(bbl: str):
             return {"message": "No BBL was provided", "status_code": 400}
 
         transactions_df = db.execute_df(" SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
-
+        transactions_df = transactions_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
         if transactions_df.empty:
             logger.error("No records found for the given BBL")
             return {"message": "No records found for the given BBL", "status_code": 400}

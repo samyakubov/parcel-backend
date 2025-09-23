@@ -18,6 +18,7 @@ def search_by_property_address(address: str):
 
 
         transactions_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
+        transactions_df = transactions_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
 
         if transactions_df.empty:
             logger.error("No records found for %s" % address)
