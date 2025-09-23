@@ -38,10 +38,10 @@ def search_by_property_address(address: str):
                     "previous_owners": previous_owner_data,
                 },
                 "records": transactions_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
-                "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
+                # "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
                 "violations": get_violation_data(transactions_df.iloc[0].bbl),
                 "complaints": get_complaint_data(address),
-                "zoning": get_zoning_details(transactions_df.iloc[0].bbl),
+                # "zoning": get_zoning_details(transactions_df.iloc[0].bbl),
                 "coordinates": address_to_coord(address),
                 "status_code": 200,
             }

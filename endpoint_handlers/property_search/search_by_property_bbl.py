@@ -41,11 +41,11 @@ def search_by_property_bbl(bbl: str):
                 "previous_owners": previous_owner_data,
             },
             "records": transactions_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
-            "permits": get_job_filings(transactions_df.iloc[0].bbl),
+            # "permits": get_job_filings(transactions_df.iloc[0].bbl),
             "violations": get_violation_data(transactions_df.iloc[0].bbl),
             "complaints": get_complaint_data(transactions_df.iloc[0].prop_streetnumber + " " + transactions_df.iloc[0].prop_streetname),
             "coordinates": address_to_coord(add_ordinal_to_street_number(standardize_address(str(transactions_df.iloc[0].prop_streetnumber + " " + transactions_df.iloc[0].prop_streetname).lower()))),
-            "zoning": get_zoning_details(bbl),
+            # "zoning": get_zoning_details(bbl),
             "status_code": 200,
         }
     except Exception as e:
