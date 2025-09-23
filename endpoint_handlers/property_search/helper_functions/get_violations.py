@@ -4,7 +4,7 @@ from logger_config import logger
 
 def get_violation_data(bbl:str):
     try:
-        violations_df = db.execute("SELECT bbl, violation_status, issuedate, violationtype, description, severity, penalty_amount, amountpaid, balancedue, respondentname, house_number, street, city, zip FROM ViolationsAggregate WHERE bbl = ?", (bbl))
+        violations_df = db.execute("SELECT bbl, violation_status, issuedate, violationtype, description, severity, penalty_amount, amountpaid, balancedue, respondentname, house_number, street, city, zip FROM ViolationsAggregate WHERE bbl = ?", [bbl])
         if violations_df.empty:
             return []
 

@@ -14,7 +14,7 @@ def get_building_shareholders(bbl: str):
                                  FROM vm_acris_index
                                  WHERE bbl = ? AND doc_type = 'BOTH RPTT AND RETT' AND amount > 0 AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
                                  """
-        all_transactions = db.execute_df(all_transactions_query, (bbl))
+        all_transactions = db.execute_df(all_transactions_query, [bbl])
 
         if all_transactions.empty:
             logger.warning(f"No transactions found for BBL: {bbl}")

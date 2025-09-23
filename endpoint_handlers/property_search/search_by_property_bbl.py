@@ -19,7 +19,7 @@ def search_by_property_bbl(bbl: str):
             logger.error("No BBL was provided")
             return {"message": "No BBL was provided", "status_code": 400}
 
-        transactions_df = db.execute_df(" SELECT * FROM vm_acris_index WHERE bbl = ? ORDER BY documentid", (bbl))
+        transactions_df = db.execute_df(" SELECT * FROM vm_acris_index WHERE bbl = ? ORDER BY documentid", [bbl])
 
         if transactions_df.empty:
             logger.error("No records found for the given BBL")

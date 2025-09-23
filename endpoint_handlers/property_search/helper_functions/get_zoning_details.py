@@ -3,7 +3,7 @@ from database_connector import db
 
 def get_zoning_details(bbl:str):
     try:
-        result = db.execute_df("SELECT * FROM Zoning WHERE bbl = ?", (bbl))
+        result = db.execute_df("SELECT * FROM Zoning WHERE bbl = ?", [bbl])
         zoning = result[0] if result else None
 
         if not zoning:

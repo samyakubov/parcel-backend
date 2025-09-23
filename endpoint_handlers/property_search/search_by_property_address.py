@@ -17,7 +17,7 @@ def search_by_property_address(address: str):
             return {"message": "No address was provided", "status_code": 400}
 
 
-        transactions_df = db.execute("SELECT * FROM vm_acris_index WHERE search_prop_address = ? ORDER BY documentid", (address))
+        transactions_df = db.execute_df("SELECT * FROM vm_acris_index WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
 
         if transactions_df.empty:
             logger.error("No records found for %s" % address)

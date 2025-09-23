@@ -2,3 +2,4 @@
 /nycdb.duckdb
 __pycache__/
 *.pyc
+/logs/

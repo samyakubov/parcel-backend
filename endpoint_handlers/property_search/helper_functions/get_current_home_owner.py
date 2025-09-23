@@ -8,17 +8,17 @@ def get_current_home_owner(bbl: str):
             logger.error("Invalid BBL provided. It must be a non-empty string.")
             return "Invalid BBL provided. It must be a non-empty string."
 
-        deed_doc = db.execute("SELECT documentid FROM vm_acris_index WHERE bbl = ? AND doc_type = 'DEED' GROUP BY documentid, recordedfiledORDER BY recordedfiled DESC LIMIT 1", (bbl))
+        deed_doc = db.execute("SELECT documentid FROM vm_acris_index WHERE bbl = ? AND doc_type = 'DEED' GROUP BY documentid, recordedfiledORDER BY recordedfiled DESC LIMIT 1", [bbl])
 
         if deed_doc:
-            deed_records = db.execute_df("SELECT party_name AS current_owner FROM vm_acris_index WHERE documentid = ? AND partytype_desc = 'GRANTEE/BUYER' ", (deed_doc[0][0]))
+            deed_records = db.execute_df("SELECT party_name AS current_owner FROM vm_acris_index WHERE documentid = ? AND partytype_desc = 'GRANTEE/BUYER' ", [deed_doc[0][0]])
             if not deed_records.empty:
                 return list(set(deed_records["current_owner"].tolist()))
 
-        mortgage_doc = db.execute("SELECT documentid FROM vm_acris_index WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, recordedfiled, bbl, doc_type ORDER BY recordedfiled DESC LIMIT 1", (bbl))
+        mortgage_doc = db.execute("SELECT documentid FROM vm_acris_index WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, recordedfiled, bbl, doc_type ORDER BY recordedfiled DESC LIMIT 1", [bbl])
 
         if mortgage_doc:
-            mortgage_records = db.execute_df("SELECT party_name AS current_owner FROM vm_acris_index WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", (mortgage_doc[0][0]))
+            mortgage_records = db.execute_df("SELECT party_name AS current_owner FROM vm_acris_index WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", [mortgage_doc[0][0]])
             if not mortgage_records.empty:
                 return list(set(mortgage_records["current_owner"].tolist()))
 

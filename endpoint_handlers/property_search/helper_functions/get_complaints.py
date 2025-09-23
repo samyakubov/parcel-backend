@@ -13,7 +13,7 @@ def get_complaint_data(address: str):
 
     street = street.strip().upper()
     try:
-        df = db.execute_df(" SELECT * FROM DOBComplaint WHERE housenumber LIKE ? AND housestreet LIKE ? ORDER BY dateentered DESC", (f"{house_number}%", f"{street}%"))
+        df = db.execute_df(" SELECT * FROM DOBComplaint WHERE housenumber LIKE ? AND housestreet LIKE ? ORDER BY dateentered DESC", [f"{house_number}%", f"{street}%"])
 
         if df.empty:
             return []
