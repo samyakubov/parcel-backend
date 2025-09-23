@@ -23,9 +23,9 @@ def get_complaint_data(address: str):
                                 dobrundate as dobrun_date,
                                 bin as bin,
                               FROM dob_complaints 
-                              WHERE 
-                                  housenumber = ? 
-                                AND housestreet LIKE ? ORDER BY dateentered DESC""",
+                              WHERE housenumber = ? 
+                                AND housestreet LIKE ? 
+                              ORDER BY dateentered DESC""",
                            [str(house_number), f"{street}%"])
         if df.empty:
             return []

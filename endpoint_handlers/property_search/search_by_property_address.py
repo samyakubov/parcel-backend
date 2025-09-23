@@ -16,7 +16,6 @@ def search_by_property_address(address: str):
             logger.error("No address was provided")
             return {"message": "No address was provided", "status_code": 400}
 
-
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
         records_df = records_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
 
