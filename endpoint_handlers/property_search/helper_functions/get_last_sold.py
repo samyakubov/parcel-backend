@@ -12,6 +12,7 @@ def get_last_sold(bbl: str):
 
     try:
         deeds_df = _get_deed_records(bbl)
+
         if deeds_df.empty:
             logger.warning(f"No deed records found for BBL: {bbl}")
             return []
@@ -62,7 +63,6 @@ def _get_deed_records(bbl: str):
 
 
 def _handle_low_price_case(bbl: str, deeds_df: pd.DataFrame):
-    # Get latest mortgage per party
     mortgage_subquery = """
                         SELECT party_name AS mortgage_party_name, MAX(recordedfiled) AS latest_mortgage_date
                         FROM aggregated_acris_records

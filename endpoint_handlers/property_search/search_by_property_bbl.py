@@ -7,7 +7,7 @@ from endpoint_handlers.property_search.helper_functions.get_job_filings import g
 from endpoint_handlers.property_search.helper_functions.get_last_sold import get_last_sold
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import get_previous_home_owners
 from endpoint_handlers.property_search.helper_functions.get_violations import get_violation_data
-from endpoint_handlers.property_search.helper_functions.get_zoning_details import get_zoning_details
+from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning_data
 from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
@@ -20,11 +20,10 @@ def search_by_property_bbl(bbl: str):
             return {"message": "No BBL was provided", "status_code": 400}
 
         transactions_df = db.execute_df(" SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
-
+        transactions_df = transactions_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
         if transactions_df.empty:
             logger.error("No records found for the given BBL")
             return {"message": "No records found for the given BBL", "status_code": 400}
-
 
         if transactions_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
             current_owner_data = get_building_shareholders(bbl)
@@ -41,11 +40,11 @@ def search_by_property_bbl(bbl: str):
                 "previous_owners": previous_owner_data,
             },
             "records": transactions_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
-            "permits": get_job_filings(transactions_df.iloc[0].bbl),
+            "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
             "violations": get_violation_data(transactions_df.iloc[0].bbl),
             "complaints": get_complaint_data(transactions_df.iloc[0].prop_streetnumber + " " + transactions_df.iloc[0].prop_streetname),
             "coordinates": address_to_coord(add_ordinal_to_street_number(standardize_address(str(transactions_df.iloc[0].prop_streetnumber + " " + transactions_df.iloc[0].prop_streetname).lower()))),
-            "zoning": get_zoning_details(bbl),
+            "zoning": get_zoning_data(bbl),
             "status_code": 200,
         }
     except Exception as e:

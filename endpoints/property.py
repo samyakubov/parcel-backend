@@ -10,7 +10,7 @@ property_routes = APIRouter(prefix="/property")
 def search_by_address(address):
     return search_by_property_address(address)
 
-@property_routes.get("/search_by_property_bbl/bbl={bbl}}", response_model=Dict)
+@property_routes.get("/search_by_property_bbl/bbl={bbl}", response_model=Dict)
 def search_by_bbl(bbl:str):
     return search_by_property_bbl(bbl)
 

@@ -5,7 +5,7 @@ from endpoint_handlers.property_search.helper_functions.get_job_filings import g
 from endpoint_handlers.property_search.helper_functions.get_last_sold import get_last_sold
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import get_previous_home_owners
 from endpoint_handlers.property_search.helper_functions.get_violations import get_violation_data
-from endpoint_handlers.property_search.helper_functions.get_zoning_details import get_zoning_details
+from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning_data
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
 from database_connector import db
@@ -18,6 +18,7 @@ def search_by_property_address(address: str):
 
 
         transactions_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
+        transactions_df = transactions_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
 
         if transactions_df.empty:
             logger.error("No records found for %s" % address)
@@ -41,7 +42,7 @@ def search_by_property_address(address: str):
                 "job_filings": get_job_filings(transactions_df.iloc[0].bbl),
                 "violations": get_violation_data(transactions_df.iloc[0].bbl),
                 "complaints": get_complaint_data(address),
-                "zoning": get_zoning_details(transactions_df.iloc[0].bbl),
+                "zoning": get_zoning_data(transactions_df.iloc[0].bbl),
                 "coordinates": address_to_coord(address),
                 "status_code": 200,
             }
