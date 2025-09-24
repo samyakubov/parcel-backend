@@ -48,29 +48,29 @@ def _get_deed_records(bbl: str):
     query = """
             SELECT
                 amount AS last_sold_price,
-                recordedfiled AS sale_date,
+                record_filed AS sale_date,
                 party_name AS deed_party_name
             FROM aggregated_acris_records
             WHERE bbl = ?
               AND doc_type = 'DEED'
               AND amount > 0
               AND partytype_desc = 'GRANTEE/BUYER'
-            ORDER BY recordedfiled DESC
-                LIMIT 10 \
+            ORDER BY record_filed DESC
+                LIMIT 10
             """
     return db.execute_df(query, [bbl])
 
 
 def _handle_low_price_case(bbl: str, deeds_df: pd.DataFrame):
     mortgage_subquery = """
-                        SELECT party_name AS mortgage_party_name, MAX(recordedfiled) AS latest_mortgage_date
+                        SELECT party_name AS mortgage_party_name, MAX(record_filed) AS latest_mortgage_date
                         FROM aggregated_acris_records
                         WHERE bbl = ?
                           AND partytype_desc = 'MORTGAGOR/BORROWER'
                           AND doc_type = 'MORTGAGE'
                         GROUP BY party_name
                         ORDER BY latest_mortgage_date DESC
-                            LIMIT 1 \
+                            LIMIT 1
                         """
     latest_mortgage = db.execute_df(mortgage_subquery, [bbl])
     if latest_mortgage.empty:

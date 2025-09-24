@@ -8,14 +8,14 @@ def get_previous_home_owners(bbl):
             return []
 
 
-        deed_records = db.execute_df("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'DEED' AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER') ORDER BY recordedfiled DESC ", [bbl])
+        deed_records = db.execute_df("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'DEED' AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER') ORDER BY record_filed DESC ", [bbl])
 
         if not deed_records.empty:
             deed_owners = deed_records["owner_name"].tolist()
             seen = set()
             return [owner for owner in deed_owners if not (owner in seen or seen.add(owner))]
 
-        mortgage_doc = db.execute_df("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, recordedfiled, bbl, doc_type ORDER BY recordedfiled DESC LIMIT 1", [bbl])
+        mortgage_doc = db.execute_df("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, record_filed, bbl, doc_type ORDER BY record_filed DESC LIMIT 1", [bbl])
 
         if mortgage_doc.empty:
             mortgage_records = db.execute("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", [mortgage_doc[0][0]])

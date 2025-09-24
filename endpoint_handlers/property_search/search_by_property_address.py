@@ -17,7 +17,7 @@ def search_by_property_address(address: str):
             return {"message": "No address was provided", "status_code": 400}
 
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
-        records_df = records_df.drop(columns=["search_prop_address", "prop_partiallot", "m_goodthroughdate"])
+        records_df = records_df.drop(columns=["search_prop_address"])
 
         if records_df.empty:
             parts = address.strip().split(' ', 1)
@@ -42,7 +42,7 @@ def search_by_property_address(address: str):
                     "current_owners": current_owner_data,
                     "previous_owners": previous_owner_data,
                 },
-                "records": records_df.sort_values(by="recordedfiled", ascending=False).to_dict(orient="records"),
+                "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
                 "job_filings": get_job_filings(records_df.iloc[0].bbl),
                 "violations": get_violation_data(records_df.iloc[0].bbl),
                 "complaints": get_complaint_data(address),
