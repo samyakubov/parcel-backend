@@ -2,7 +2,25 @@ from database_connector import db
 from logger_config import logger
 import pandas as pd
 
-LOW_PRICE_THRESHOLD = 1000
+
+def _get_deed_records(bbl: str):
+    query = """
+            SELECT
+                amount AS last_sold_price,
+                record_filed AS sale_date,
+                party_name AS deed_party_name
+            FROM aggregated_acris_records
+            WHERE bbl = ?
+              AND doc_type = 'DEED'
+              AND amount > 0
+              AND partytype_desc = 'GRANTEE/BUYER'
+            ORDER BY record_filed DESC
+            """
+    return db.execute_df(query, [bbl])
+
+def _get_sale_records(bbl: str):
+    deeds_df = db.execute_df("SELECT * FROM annualized_sales WHERE bbl = ?", [bbl])
+    return deeds_df
 
 def get_last_sold(bbl: str):
     if not bbl or not isinstance(bbl, str):
@@ -10,15 +28,26 @@ def get_last_sold(bbl: str):
         logger.error(error_msg)
         return error_msg
     try:
-        deeds_df = _get_deed_records(bbl)
+        sale_records = _get_sale_records(bbl)
 
+        if not sale_records.empty:
+            latest_sale = sale_records.iloc[-1]
+            return {
+                "last_sold_price": int(latest_sale.sale_price),
+                "sale_date": latest_sale.sale_date,
+                "year_built": str(latest_sale.year_built),
+                "land_sqft": str(latest_sale.land_square_feet),
+                "gross_sqft":str(latest_sale.gross_square_feet)
+            }
+
+        deeds_df = _get_deed_records(bbl)
         if deeds_df.empty:
             logger.warning(f"No sale records found for BBL: {bbl}")
             return []
 
         latest_deed = deeds_df.iloc[0]
 
-        if latest_deed.last_sold_price < LOW_PRICE_THRESHOLD:
+        if latest_deed.last_sold_price < 1000:
             if len(deeds_df) > 1:
                 prev_deed = deeds_df.iloc[1]
                 if prev_deed.deed_party_name == latest_deed.deed_party_name:
@@ -43,22 +72,6 @@ def get_last_sold(bbl: str):
         logger.error(f"Error in get_last_sold for BBL {bbl}: {e}")
         return []
 
-
-def _get_deed_records(bbl: str):
-    query = """
-            SELECT
-                amount AS last_sold_price,
-                record_filed AS sale_date,
-                party_name AS deed_party_name
-            FROM aggregated_acris_records
-            WHERE bbl = ?
-              AND doc_type = 'DEED'
-              AND amount > 0
-              AND partytype_desc = 'GRANTEE/BUYER'
-            ORDER BY record_filed DESC
-                LIMIT 10
-            """
-    return db.execute_df(query, [bbl])
 
 
 def _handle_low_price_case(bbl: str, deeds_df: pd.DataFrame):
