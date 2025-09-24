@@ -17,7 +17,7 @@ def get_previous_home_owners(bbl):
 
         mortgage_doc = db.execute_df("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, recordedfiled, bbl, doc_type ORDER BY recordedfiled DESC LIMIT 1", [bbl])
 
-        if mortgage_doc:
+        if mortgage_doc.empty:
             mortgage_records = db.execute("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", [mortgage_doc[0][0]])
             if not mortgage_records.empty:
                 mortgage_owners = mortgage_records["owner_name"].tolist()
