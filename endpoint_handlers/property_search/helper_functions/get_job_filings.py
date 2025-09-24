@@ -6,14 +6,17 @@ def get_job_filings(bbl:str):
     try:
         job_filings_df = db.execute_df("""SELECT 
                                                 jobdescription as job_description, 
-                                                approved,
-                                                bin 
+                                                bin as bin,
+                                                jobstatus as job_status,
+                                                jobtype as job_type,
+                                                ApplicantsFirstName as applicant_first_name,
+                                                ApplicantsLastName as applicant_last_name,
+                                                ApplicantProfessionalTitle as applicant_professial_title
                                           FROM dobjobs WHERE bbl = ?""",
                                        [bbl])
 
         if job_filings_df.empty:
             return []
-
         return job_filings_df.to_dict(orient="records")
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

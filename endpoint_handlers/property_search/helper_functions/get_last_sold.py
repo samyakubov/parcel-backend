@@ -9,7 +9,6 @@ def get_last_sold(bbl: str):
         error_msg = "Invalid BBL provided. It must be a non-empty string."
         logger.error(error_msg)
         return error_msg
-
     try:
         deeds_df = _get_deed_records(bbl)
 

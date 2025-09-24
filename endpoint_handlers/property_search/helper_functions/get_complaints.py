@@ -15,6 +15,7 @@ def get_complaint_data(address: str):
         df = db.execute_df("""SELECT 
                                 complaintnumber as complaint_number,
                                 dateentered as date_entered,
+                                status as status,
                                 specialdistrict as special_district,
                                 complaintcategory as complaint_category,
                                 dispositiondate as disposition_date,

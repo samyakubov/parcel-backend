@@ -22,7 +22,7 @@ def search_by_property_address(address: str):
         if records_df.empty:
             parts = address.strip().split(' ', 1)
             house_number, street = parts
-            records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid", [house_number, f"{street.upper()}%"])
+            records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid", [house_number, f"{street.replace(' ', '%').upper()}%"])
             if records_df.empty:
                 logger.error("No records found for %s" % address)
                 return {"message": "No records found", "status_code": 404}
@@ -37,8 +37,8 @@ def search_by_property_address(address: str):
             previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
 
         return {
-                "last_sold_for": get_last_sold(records_df.iloc[0].bbl),
-                "owners": {
+            "last_sold_for": get_last_sold(records_df.iloc[0].bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
+            "owners": {
                     "current_owners": current_owner_data,
                     "previous_owners": previous_owner_data,
                 },
