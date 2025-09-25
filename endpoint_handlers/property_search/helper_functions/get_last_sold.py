@@ -1,3 +1,4 @@
+import datetime
 from database_connector import db
 from logger_config import logger
 import pandas as pd
@@ -11,26 +12,42 @@ def get_last_sold(bbl: str):
 
     try:
         sale_data = _get_latest_sale_record(bbl)
-
-
         deed_data = _get_latest_deed_record(bbl)
 
-        if sale_data and sale_data['last_sold_price']>0:
-            return sale_data
 
-        if deed_data:
+        sale_date = _parse_date(sale_data.get('sale_date')) if sale_data else None
+        deed_date = _parse_date(deed_data.get('sale_date'))
+
+        if sale_data and sale_data['last_sold_price']>0 and sale_date:
+            if deed_date > sale_date:
+                deed_data['year_built'] = sale_data['year_built']
+                deed_data['land_sqft'] = sale_data['land_sqft']
+                deed_data['gross_sqft'] = sale_data['gross_sqft']
+            else:
+                return sale_data
+        else:
             if sale_data['year_built'] and sale_data['land_sqft'] and sale_data['gross_sqft']:
                 deed_data['year_built'] = sale_data['year_built']
                 deed_data['land_sqft'] = sale_data['land_sqft']
                 deed_data['gross_sqft'] = sale_data['gross_sqft']
             return deed_data
-        
+
         logger.warning(f"No valid sale or deed records found for BBL: {bbl}")
         return {}
 
     except Exception as e:
         logger.error(f"Error in get_last_sold for BBL {bbl}: {e}")
         return {}
+
+
+def _parse_date(date_str):
+    if not date_str:
+        return None
+    try:
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        logger.warning(f"Unable to parse date: {date_str}")
+        return None
 
 
 def _is_valid_bbl(bbl: str) -> bool:
