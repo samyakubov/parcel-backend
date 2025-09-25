@@ -1,4 +1,3 @@
-import datetime
 from database_connector import db
 from logger_config import logger
 import pandas as pd
@@ -14,40 +13,28 @@ def get_last_sold(bbl: str):
         sale_data = _get_latest_sale_record(bbl)
         deed_data = _get_latest_deed_record(bbl)
 
+        sale_date = sale_data.get('sale_date') if sale_data else None
+        deed_date = deed_data.get('sale_date') if deed_data else None
 
-        sale_date = _parse_date(sale_data.get('sale_date')) if sale_data else None
-        deed_date = _parse_date(deed_data.get('sale_date'))
-
-        if sale_data and sale_data['last_sold_price']>0 and sale_date:
-            if deed_date > sale_date:
-                deed_data['year_built'] = sale_data['year_built']
-                deed_data['land_sqft'] = sale_data['land_sqft']
-                deed_data['gross_sqft'] = sale_data['gross_sqft']
-            else:
-                return sale_data
-        else:
-            if sale_data['year_built'] and sale_data['land_sqft'] and sale_data['gross_sqft']:
-                deed_data['year_built'] = sale_data['year_built']
-                deed_data['land_sqft'] = sale_data['land_sqft']
-                deed_data['gross_sqft'] = sale_data['gross_sqft']
+        if sale_date and deed_date and deed_date > sale_date:
+            deed_data['year_built'] = sale_data['year_built']
+            deed_data['land_sqft'] = sale_data['land_sqft']
+            deed_data['gross_sqft'] = sale_data['gross_sqft']
             return deed_data
 
-        logger.warning(f"No valid sale or deed records found for BBL: {bbl}")
-        return {}
+        if sale_data:
+            if sale_data['last_sold_price']>0:
+                return sale_data
+
+            deed_data['year_built'] = sale_data['year_built']
+            deed_data['land_sqft'] = sale_data['land_sqft']
+            deed_data['gross_sqft'] = sale_data['gross_sqft']
+
+        return deed_data
 
     except Exception as e:
         logger.error(f"Error in get_last_sold for BBL {bbl}: {e}")
         return {}
-
-
-def _parse_date(date_str):
-    if not date_str:
-        return None
-    try:
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        logger.warning(f"Unable to parse date: {date_str}")
-        return None
 
 
 def _is_valid_bbl(bbl: str) -> bool:
@@ -103,7 +90,7 @@ def _query_deed_records(bbl: str) -> pd.DataFrame:
               AND doc_type = 'DEED'
               AND amount > 0
               AND partytype_desc = 'GRANTEE/BUYER'
-            ORDER BY record_filed DESC \
+            ORDER BY record_filed DESC
             """
     return db.execute_df(query, [bbl])
 
@@ -130,7 +117,7 @@ def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame):
               AND doc_type = 'MORTGAGE'
             GROUP BY party_name
             ORDER BY latest_mortgage_date DESC
-                LIMIT 1 \
+                LIMIT 1
             """
     mortgage_df = db.execute_df(query, [bbl])
     if mortgage_df.empty:
