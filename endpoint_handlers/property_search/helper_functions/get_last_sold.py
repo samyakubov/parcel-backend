@@ -25,16 +25,16 @@ def get_last_sold(bbl: str):
         if sale_data:
             if sale_data['last_sold_price']>0:
                 return sale_data
-
-            deed_data['year_built'] = sale_data['year_built']
-            deed_data['land_sqft'] = sale_data['land_sqft']
-            deed_data['gross_sqft'] = sale_data['gross_sqft']
+            if deed_data:
+                deed_data['year_built'] = sale_data['year_built']
+                deed_data['land_sqft'] = sale_data['land_sqft']
+                deed_data['gross_sqft'] = sale_data['gross_sqft']
 
         return deed_data
 
     except Exception as e:
         logger.error(f"Error in get_last_sold for BBL {bbl}: {e}")
-        return {}
+        return None
 
 
 def _is_valid_bbl(bbl: str) -> bool:
