@@ -19,10 +19,8 @@ def search_by_party_name(last_name: str, first_name: str):
             logger.error("No records found matching the party name")
             return {"message": "No records found matching the party name", "status_code": 404}
 
-        # Step 2: Use document IDs to fetch full records
         document_ids = doc_id_df["documentid"].tolist()
 
-        # DuckDB doesn't support parameter substitution for IN (...), so construct safely
         placeholders = ", ".join(["?"] * len(document_ids))
 
         transactions_df = db.execute_df(f"SELECT * FROM aggregated_acris_records WHERE documentid IN ({placeholders}) ORDER BY documentid", document_ids)
