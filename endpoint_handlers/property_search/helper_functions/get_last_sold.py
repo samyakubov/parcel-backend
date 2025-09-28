@@ -7,7 +7,7 @@ def get_last_sold(bbl: str):
     if not _is_valid_bbl(bbl):
         error_msg = "Invalid BBL provided. It must be a non-empty string."
         logger.error(error_msg)
-        return {"error": error_msg}
+        return None
 
     try:
         sale_data = _get_latest_sale_record(bbl)
