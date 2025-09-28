@@ -10,7 +10,6 @@ WITH property_records AS (
         per.rpl_unit AS prop_unit,
         per.rpl_streetnumber AS prop_streetnumber,
         per.rpl_streetname AS prop_streetname,
-        per.rpl_partiallot,
         per.dcc_partytype_desc AS partytype_desc,
         per.rpp_name AS party_name,
         per.rpp_address1 AS party_address1,
@@ -21,8 +20,7 @@ WITH property_records AS (
         per.rpp_zip AS party_zip,
         per.apc_property_description AS prop_type,
         per.dcc_doctypedescription AS doc_type,
-        per.rpm_recordedfiled AS recordedfiled,
-        per.rpm_goodthroughdate AS m_goodthroughdate
+        per.rpm_record_filed AS record_filed,
     FROM nycdb.main.vw_real_property_records per
 
     UNION ALL
@@ -37,7 +35,6 @@ WITH property_records AS (
         per.rpl_unit AS prop_unit,
         per.rpl_streetnumber AS prop_streetnumber,
         per.rpl_streetname AS prop_streetname,
-        per.rpl_partiallot,
         per.dcc_partytype_desc AS partytype_desc,
         per.rpp_name AS party_name,
         per.rpp_address1 AS party_address1,
@@ -48,17 +45,11 @@ WITH property_records AS (
         per.rpp_zip AS party_zip,
         per.apc_property_description AS prop_type,
         per.dcc_doctypedescription AS doc_type,
-        per.rpm_recordedfiled AS recordedfiled,
-        per.rpm_goodthroughdate AS m_goodthroughdate
+        per.rpm_record_filed AS record_filed,
     FROM nycdb.main.vw_personal_property_records per
 )
 SELECT
     pr.*,
-    CASE
-        WHEN pr.rpl_partiallot = 'P' THEN 'Partial'
-        WHEN pr.rpl_partiallot = 'E' THEN 'Entire'
-        ELSE ''
-        END AS prop_partiallot,
     UPPER(normalize_property_address(pr.prop_streetnumber, pr.prop_streetname, pr.prop_borough)) AS search_prop_address
 FROM property_records pr;
 
