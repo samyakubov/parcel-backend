@@ -28,7 +28,7 @@ where a.bbl in (
       and streetnumber is  null and  streetname is null
 )
   and streetnumber is not null and  streetname is not null
--- this has usefull data forthe bbl
+-- this has useful data for the bbl
 --https://data.cityofnewyork.us/City-Government/Property-Address-Directory/bc8t-ecyu/about_data
 
 --bbl matching to multiple addreses

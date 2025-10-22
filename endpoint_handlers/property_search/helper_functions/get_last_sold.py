@@ -42,7 +42,7 @@ def _is_valid_bbl(bbl: str) -> bool:
 
 
 def _get_latest_sale_record(bbl: str):
-    sales_df = db.execute_df("SELECT * FROM annualized_sales WHERE bbl = ?", [bbl])
+    sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
     if sales_df.empty:
         return None
 
