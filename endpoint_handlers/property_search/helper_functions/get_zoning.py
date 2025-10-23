@@ -1,7 +1,7 @@
 from database_connector import db
 
 
-def get_zoning_data(bbl:str):
+def get_zoning(bbl:str):
     try:
         result = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
         if result.empty:
@@ -42,4 +42,4 @@ def get_zoning_data(bbl:str):
         }
     except Exception as e:
         print(f"Error retrieving zoning details for BBL {bbl}: {str(e)}")
-        raise
+        return None

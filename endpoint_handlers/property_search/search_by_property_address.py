@@ -1,11 +1,11 @@
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
-from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaint_data
+from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
 from endpoint_handlers.property_search.helper_functions.get_current_home_owner import get_current_home_owner
 from endpoint_handlers.property_search.helper_functions.get_job_filings import get_job_filings
 from endpoint_handlers.property_search.helper_functions.get_last_sold import get_last_sold
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import get_previous_home_owners
-from endpoint_handlers.property_search.helper_functions.get_violations import get_violation_data
-from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning_data
+from endpoint_handlers.property_search.helper_functions.get_violations import get_violations
+from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
 from database_connector import db
@@ -44,9 +44,9 @@ def search_by_property_address(address: str):
                 },
                 "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
                 "job_filings": get_job_filings(records_df.iloc[0].bbl),
-                "violations": get_violation_data(records_df.iloc[0].bbl),
-                "complaints": get_complaint_data(address),
-                "zoning": get_zoning_data(records_df.iloc[0].bbl),
+                "violations": get_violations(records_df.iloc[0].bbl),
+                "complaints": get_complaints(address),
+                "zoning": get_zoning(records_df.iloc[0].bbl),
                 "coordinates": address_to_coord(address),
                 "status_code": 200,
             }

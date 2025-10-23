@@ -4,7 +4,7 @@ from endpoint_handlers.property_search.helper_functions.standardize_address_for_
 from logger_config import logger
 
 
-def get_complaint_data(address: str):
+def get_complaints(address: str):
     parts = standardize_address(address).strip().split(' ', 1)
     if len(parts) != 2:
         return []

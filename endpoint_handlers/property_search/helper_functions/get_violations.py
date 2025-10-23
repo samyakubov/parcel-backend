@@ -2,18 +2,18 @@ from database_connector import db
 from logger_config import logger
 
 
-def get_violation_data(bbl:str):
+def get_violations(bbl:str):
     try:
         violations_df = db.execute_df("""SELECT bbl, 
                                                 violation_status, 
-                                                issuedate as issue_date, 
-                                                violationtype as violation_type, 
+                                                issue_date, 
+                                                violation_type, 
                                                 description, 
                                                 severity, 
                                                 penalty_amount, 
-                                                amountpaid as amount_paid, 
-                                                balancedue as balance_due, 
-                                                respondentname as respondent_name, 
+                                                amount_paid, 
+                                                balance_due, 
+                                                respondent_name, 
                                                 house_number, 
                                                 street, 
                                                 city, 
