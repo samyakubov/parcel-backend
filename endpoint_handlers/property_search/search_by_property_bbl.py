@@ -1,4 +1,7 @@
+from fastapi import HTTPException
+from starlette import status
 from database_connector import db
+from endpoint_handlers.property_search.exceptions import BBLNotFoundException, InvalidBBLException
 from endpoint_handlers.property_search.helper_functions.add_ordinal_to_street_number import add_ordinal_to_street_number
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
@@ -17,13 +20,13 @@ def search_by_property_bbl(bbl: str):
     try:
         if not bbl:
             logger.error("No BBL was provided")
-            return {"message": "No BBL was provided", "status_code": 400}
+            raise InvalidBBLException("BBL cannot be empty")
 
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
         records_df = records_df.drop(columns=["search_prop_address"])
         if records_df.empty:
             logger.error("No records found for the given BBL")
-            return {"message": "No records found for the given BBL", "status_code": 400}
+            raise BBLNotFoundException(bbl)
 
         if records_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
             current_owner_data = get_building_shareholders(bbl)
@@ -34,19 +37,24 @@ def search_by_property_bbl(bbl: str):
             previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
 
         return {
-            "last_sold": get_last_sold(records_df.iloc[0].bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
+            "last_sold": get_last_sold(bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
             "owners": {
                 "current_owners": current_owner_data,
                 "previous_owners": previous_owner_data,
             },
             "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            "job_filings": get_job_filings(records_df.iloc[0].bbl),
-            "violations": get_violations(records_df.iloc[0].bbl),
+            "job_filings": get_job_filings(bbl),
+            "violations": get_violations(bbl),
             "complaints": get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname),
             "coordinates": address_to_coord(add_ordinal_to_street_number(standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower()))),
             "zoning": get_zoning(bbl),
             "status_code": 200,
         }
+    except (InvalidBBLException, BBLNotFoundException):
+        raise
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return {"message": "An unexpected error has occurred", "status_code": 500}
+        logger.error(f"Unexpected error in search_by_property_bbl for BBL {bbl}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while processing your request"
+        )

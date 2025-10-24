@@ -1,3 +1,6 @@
+from fastapi import HTTPException
+from starlette import status
+from endpoint_handlers.property_search.exceptions import AddressNotFoundException, InvalidAddressException
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
 from endpoint_handlers.property_search.helper_functions.get_current_home_owner import get_current_home_owner
@@ -14,7 +17,7 @@ def search_by_property_address(address: str):
     try:
         if not address:
             logger.error("No address was provided")
-            return {"message": "No address was provided", "status_code": 400}
+            raise InvalidAddressException("Address cannot be empty")
 
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
         records_df = records_df.drop(columns=["search_prop_address"])
@@ -25,7 +28,7 @@ def search_by_property_address(address: str):
             records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid", [house_number, f"{street.replace(' ', '%').upper()}%"])
             if records_df.empty:
                 logger.error("No records found for %s" % address)
-                return {"message": "No records found", "status_code": 404}
+                raise AddressNotFoundException(address)
 
 
         if records_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
@@ -50,6 +53,11 @@ def search_by_property_address(address: str):
                 "coordinates": address_to_coord(address),
                 "status_code": 200,
             }
+    except (InvalidAddressException, AddressNotFoundException):
+        raise
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return {"message": "An unexpected error has occurred", "status_code": 500}
+        logger.error(f"Unexpected error in search_by_property_address for address {address}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while processing your request"
+        )
