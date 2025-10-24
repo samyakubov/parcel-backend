@@ -24,17 +24,28 @@ def search_by_property_bbl(bbl: str):
 
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
         records_df = records_df.drop(columns=["search_prop_address"])
+        current_owner_data = []
+
+        COOP_PROPERTY_TYPES = {
+            "MULTIPLE RESIDENTIAL COOP UNIT",
+            "APARTMENT BUILDING",
+            "SINGLE RESIDENTIAL COOP UNIT"
+        }
+
         if records_df.empty:
             logger.error("No records found for the given BBL")
             raise BBLNotFoundException(bbl)
 
-        if records_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
+        prop_type = records_df.iloc[0].prop_type
+
+        if prop_type in COOP_PROPERTY_TYPES:
             current_owner_data = get_building_shareholders(bbl)
-            previous_owner_data = []
-        else:
+
+        if len(current_owner_data) == 0:
             current_owner_data = get_current_home_owner(bbl)
-            all_previous_data = get_previous_home_owners(records_df.iloc[0].bbl)
-            previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
+
+        all_previous_data = get_previous_home_owners(bbl)
+        previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
 
         return {
             "last_sold": get_last_sold(bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
@@ -56,5 +67,4 @@ def search_by_property_bbl(bbl: str):
         logger.error(f"Unexpected error in search_by_property_bbl for BBL {bbl}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred while processing your request"
         )

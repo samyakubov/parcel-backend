@@ -1,5 +1,4 @@
-from endpoint_handlers.property_search.exceptions import InvalidBBLException, BBLNotFoundException, \
-    InvalidAddressException, AddressNotFoundException
+from endpoint_handlers.property_search.exceptions import InvalidBBLException, BBLNotFoundException, InvalidAddressException, AddressNotFoundException
 from fastapi import Request, status, HTTPException
 from fastapi.responses import JSONResponse
 
