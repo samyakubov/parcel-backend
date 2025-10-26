@@ -15,14 +15,8 @@ class InvalidAddressException(Exception):
         self.message = message
         super().__init__(self.message)
 
-    def __str__(self):
-        return self.message
-
 
 class AddressNotFoundException(Exception):
     def __init__(self, address: str):
         self.address = address
-        super().__init__(f"No records found for address: {address}")
-
-    def __str__(self):
-        return self.message
+        super().__init__(f"No records found for address: {self.address}")
