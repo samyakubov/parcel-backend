@@ -9,11 +9,7 @@ def search_by_party_name(last_name: str, first_name: str):
             return {"message": "No party name was provided", "status_code": 400}
 
         party_name = f"{last_name.upper()}, {first_name.upper()}"
-        doc_id_df = db.execute_df("SELECT DISTINCT documentid, party_name FROM aggregated_acris_records WHERE UPPER(party_name) = UPPER(?)", [party_name])
-
-        if 'party_name' not in doc_id_df.columns:
-            logger.error("`party_name` column is missing from the result set")
-            return {"message": "`party_name` column is missing from the result set", "status_code": 500}
+        doc_id_df = db.execute_df("SELECT DISTINCT documentid FROM aggregated_acris_records WHERE UPPER(party_name) = UPPER(?)", [party_name])
 
         if doc_id_df.empty:
             logger.error("No records found matching the party name")

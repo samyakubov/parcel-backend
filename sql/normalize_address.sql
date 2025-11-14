@@ -1,6 +1,7 @@
 DROP MACRO IF EXISTS normalize_property_address;
 
 CREATE OR REPLACE MACRO normalize_property_address(street_number, street_name, borough) AS (
+   --params
     WITH inputs AS (
         SELECT
             street_number AS orig_number,
@@ -20,6 +21,7 @@ CREATE OR REPLACE MACRO normalize_property_address(street_number, street_name, b
                      AND regexp_full_match(orig_name, '^[0-9]+[A-Za-z].*')
                     THEN regexp_replace(orig_name, '^[0-9]+(.*)$', '\1')
                 ELSE orig_name
+            --returns sname
             END AS sname,
             b
         FROM inputs
@@ -33,6 +35,7 @@ CREATE OR REPLACE MACRO normalize_property_address(street_number, street_name, b
                     THEN substring(clean_number, 1, length(clean_number) - 2)
                          || '-' || right(clean_number, 2)
                 ELSE clean_number
+            --returns formatted_number
             END AS formatted_number,
             sname
         FROM cleaned
@@ -54,6 +57,7 @@ CREATE OR REPLACE MACRO normalize_property_address(street_number, street_name, b
                   OR sname ILIKE 'S %' OR sname ILIKE 'SOUTH %'
                 THEN regexp_replace(sname, '^(E|EAST|W|WEST|N|NORTH|S|SOUTH)\s+', '', 'i')
                 ELSE sname
+--             returns sname_no_direction
             END AS sname_no_direction
         FROM formatted
     ),

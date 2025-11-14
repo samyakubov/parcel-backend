@@ -48,7 +48,7 @@ def search_by_property_bbl(bbl: str):
         previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
 
         return {
-            "last_sold": get_last_sold(bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
+            "last_sold": get_last_sold(bbl) if records_df.iloc[0].prop_type not in COOP_PROPERTY_TYPES else [],
             "owners": {
                 "current_owners": current_owner_data,
                 "previous_owners": previous_owner_data,

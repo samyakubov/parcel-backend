@@ -1,14 +1,14 @@
 from database_connector import db
+from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
 import pandas as pd
 
 
 def get_last_sold(bbl: str):
-    if not _is_valid_bbl(bbl):
-        error_msg = "Invalid BBL provided. It must be a non-empty string."
+    if not isinstance(bbl, str) and bbl.strip() != "":
+        error_msg = "Invalid BBL provided in get_last_sold"
         logger.error(error_msg)
-        return None
-
+        raise InvalidBBLException(error_msg)
     try:
         sale_data = _get_latest_sale_record(bbl)
         deed_data = _get_latest_deed_record(bbl)
@@ -31,14 +31,11 @@ def get_last_sold(bbl: str):
                 deed_data['gross_sqft'] = sale_data['gross_sqft']
 
         return deed_data
-
+    except (InvalidBBLException):
+        return None
     except Exception as e:
         logger.error(f"Error in get_last_sold for BBL {bbl}: {e}")
         return None
-
-
-def _is_valid_bbl(bbl: str) -> bool:
-    return isinstance(bbl, str) and bbl.strip() != ""
 
 
 def _get_latest_sale_record(bbl: str):
@@ -62,9 +59,19 @@ def _get_latest_sale_record(bbl: str):
     return None
 
 
-
 def _get_latest_deed_record(bbl: str):
-    deeds_df = _query_deed_records(bbl)
+    deeds_df = db.execute_df("""
+         SELECT
+             amount AS last_sold_price,
+             record_filed AS sale_date,
+             party_name AS deed_party_name
+         FROM aggregated_acris_records
+         WHERE bbl = ?
+           AND doc_type = 'DEED'
+           AND amount > 0
+           AND partytype_desc = 'GRANTEE/BUYER'
+         ORDER BY record_filed DESC
+         """, [bbl])
     if deeds_df.empty:
         return None
 
@@ -77,23 +84,6 @@ def _get_latest_deed_record(bbl: str):
         "last_sold_price": int(latest.last_sold_price),
         "sale_date": latest.sale_date
     }
-
-
-def _query_deed_records(bbl: str) -> pd.DataFrame:
-    query = """
-            SELECT
-                amount AS last_sold_price,
-                record_filed AS sale_date,
-                party_name AS deed_party_name
-            FROM aggregated_acris_records
-            WHERE bbl = ?
-              AND doc_type = 'DEED'
-              AND amount > 0
-              AND partytype_desc = 'GRANTEE/BUYER'
-            ORDER BY record_filed DESC
-            """
-    return db.execute_df(query, [bbl])
-
 
 
 def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Series) :
