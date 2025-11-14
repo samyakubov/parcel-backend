@@ -11,7 +11,7 @@ def get_job_filings(bbl:str):
                                                 jobtype as job_type,
                                                 ApplicantsFirstName as applicant_first_name,
                                                 ApplicantsLastName as applicant_last_name,
-                                                ApplicantProfessionalTitle as applicant_professial_title
+                                                ApplicantProfessionalTitle as applicant_professional_title
                                           FROM dobjobs WHERE bbl = ?""",
                                        [bbl])
 
