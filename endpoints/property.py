@@ -11,11 +11,11 @@ property_routes = APIRouter(prefix="/property")
 def search_by_address(address):
     return search_by_property_address(address)
 
-@property_routes.get("/search_by_property_bbl/bbl={bbl}", response_model=Dict)
+@property_routes.get("/search_by_property_bbl/bbl={bbl}", dependencies=[Depends(validate_api_key)], response_model=Dict)
 def search_by_bbl(bbl:str):
     return search_by_property_bbl(bbl)
 
-@property_routes.get("/search_by_fuzzy_coords/lat={lat}/long={long}", response_model=Dict)
+@property_routes.get("/search_by_fuzzy_coords/lat={lat}/long={long}", dependencies=[Depends(validate_api_key)], response_model=Dict)
 def search_by_fuzz_coords(lat,long):
     try:
         address = coord_to_address(lat, long)['address']
