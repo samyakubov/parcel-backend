@@ -43,4 +43,4 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
     # Update last_used_at timestamp
     update_last_used(x_api_key)
 
-    logger.info(f"Authentication successful with Given Api Key")
+    logger.info(f"Authentication successful with given Key")

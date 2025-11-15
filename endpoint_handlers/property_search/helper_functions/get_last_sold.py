@@ -10,7 +10,7 @@ def get_last_sold(bbl: str):
         logger.error(error_msg)
         raise InvalidBBLException(error_msg)
     try:
-        logger.info(f"Fetching last sold information for BBL: {bbl}")
+        logger.info(f"--------------------Fetching last sold information for BBL: {bbl}--------------------")
         sale_data = _get_latest_sale_record(bbl)
         deed_data = _get_latest_deed_record(bbl)
 
@@ -20,7 +20,7 @@ def get_last_sold(bbl: str):
         logger.info(f"Latest sale record date: {sale_date}, Latest deed record date: {deed_date} for BBL: {bbl}")
 
         if sale_date and deed_date and deed_date > sale_date:
-            logger.info(f"Deed date is more recent. Using deed data and augmenting with sale data for BBL: {bbl}")
+            logger.info(f"--------------------Deed date is more recent. Using deed data and augmenting with sale data for BBL: {bbl}--------------------\n")
             deed_data['year_built'] = sale_data.get('year_built')
             deed_data['land_sqft'] = sale_data.get('land_sqft')
             deed_data['gross_sqft'] = sale_data.get('gross_sqft')
@@ -28,19 +28,19 @@ def get_last_sold(bbl: str):
 
         if sale_data:
             if sale_data.get('last_sold_price', 0) > 0:
-                logger.info(f"Using latest sale record data for BBL: {bbl}")
+                logger.info(f"--------------------Using latest sale record data for BBL: {bbl}--------------------\n")
                 return sale_data
             if deed_data:
-                logger.info(f"Sale price is zero. Augmenting deed data with sale data for BBL: {bbl}")
+                logger.info(f"Sale price is zero. Appending property information from sale data: {bbl}")
                 deed_data['year_built'] = sale_data.get('year_built')
                 deed_data['land_sqft'] = sale_data.get('land_sqft')
                 deed_data['gross_sqft'] = sale_data.get('gross_sqft')
+                logger.info(f"--------------------Using latest deed record data for BBL: {bbl}--------------------\n")
                 return deed_data
 
-        logger.info(f"No definitive last sold data found, returning deed data if available for BBL: {bbl}")
+        logger.info(f"--------------------No definitive last sold data found, returning deed data for BBL: {bbl}--------------------\n")
         return deed_data
     except InvalidBBLException:
-        # This is already logged when raised
         raise
     except Exception as e:
         logger.error(f"An unexpected error occurred in get_last_sold for BBL {bbl}: {e}", exc_info=True)
@@ -66,7 +66,7 @@ def _get_latest_sale_record(bbl: str):
             "gross_sqft": str(latest.gross_square_feet)
         }
     except (ValueError, AttributeError) as e:
-        logger.warning(f"Invalid data encountered in annualized_sales for BBL {bbl}: {e}", exc_info=True)
+        logger.error(f"Invalid data encountered in annualized_sales for BBL {bbl}: {e}", exc_info=True)
 
     return None
 
@@ -102,7 +102,7 @@ def _get_latest_deed_record(bbl: str):
         "sale_date": latest.sale_date
     }
 
-
+#this is to handle deed transfers between family members/trusts
 def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Series) :
     if len(deeds_df) > 1:
         prev = deeds_df.iloc[1]
@@ -115,7 +115,7 @@ def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Ser
 
     return _match_deed_with_mortgage(bbl, deeds_df)
 
-
+#TODO:Find out why I did this
 def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame):
     logger.info(f"Attempting to match low-price deed with a mortgage for BBL: {bbl}")
     query = """

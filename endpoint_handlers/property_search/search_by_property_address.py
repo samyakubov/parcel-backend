@@ -19,7 +19,7 @@ def search_by_property_address(address: str):
         raise InvalidAddressException("Address cannot be empty")
 
     try:
-        logger.info(f"Starting property search for address: '{address}'")
+        logger.info(f"--------------------------Starting property search for address: '{address}'--------------------------")
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
         records_df = records_df.drop(columns=["search_prop_address"])
         current_owner_data = []
@@ -41,10 +41,9 @@ def search_by_property_address(address: str):
 
         bbl = records_df.iloc[0].bbl
         prop_type = records_df.iloc[0].prop_type
-        logger.info(f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'.")
+        logger.info(f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n")
 
         if prop_type in COOP_PROPERTY_TYPES:
-            logger.info(f"Property type is a CO-OP ('{prop_type}'). Fetching shareholder information for BBL {bbl}.")
             current_owner_data = get_building_shareholders(bbl)
 
         if len(current_owner_data) == 0:
@@ -52,7 +51,6 @@ def search_by_property_address(address: str):
 
         all_previous_data = get_previous_home_owners(bbl)
         previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
-        logger.info(f"Found {len(current_owner_data)} current owner(s) and {len(previous_owner_data)} previous owner(s) for BBL {bbl}.")
 
         response_data = {
             "last_sold": get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else [],
@@ -68,11 +66,11 @@ def search_by_property_address(address: str):
             "coordinates": address_to_coord(address),
             "status_code": 200,
         }
-        logger.info(f"Successfully compiled all data for address: '{address}'.")
+        logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
         return response_data
 
     except (InvalidAddressException, AddressNotFoundException) as e:
-        logger.warning(f"{type(e).__name__} occurred while searching for address '{address}': {e}")
+        logger.error(f"{type(e).__name__} occurred while searching for address '{address}': {e}")
         raise
     except Exception as e:
         logger.error(f"An unexpected error occurred in search_by_property_address for address '{address}': {e}", exc_info=True)
