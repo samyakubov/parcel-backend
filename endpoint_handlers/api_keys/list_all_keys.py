@@ -4,9 +4,14 @@ from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
 
 
 def list_all_keys() -> List[APIKeyConfig]:
-    """
-    List all API keys.
-    Note: Returns full key values. Caller should filter sensitive data for display.
+    """Lists all API keys from the database.
+
+    Note:
+        This function returns the full key values. The caller is responsible for
+        filtering sensitive data before displaying it.
+
+    Returns:
+        List[APIKeyConfig]: A list of all API keys.
     """
     query = """
             SELECT id, key, name, enabled, created_at, updated_at, last_used_at

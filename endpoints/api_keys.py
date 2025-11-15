@@ -3,7 +3,6 @@ from typing import Optional
 from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel
 from starlette import status
-
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
 from endpoint_handlers.api_keys.exceptions import MissingAdminKeyException, InvalidAdminKeyException, FailedToCreateApiKeyException, FailedToDeleteApiKeyException
@@ -13,6 +12,7 @@ from logger_config import logger
 
 
 class CreateAPIKeyResponse(BaseModel):
+    """Response model for creating a new API key."""
     id: int
     key: str
     name: str
@@ -21,6 +21,7 @@ class CreateAPIKeyResponse(BaseModel):
 
 
 class APIKeyListItem(BaseModel):
+    """Response model for listing an API key."""
     id: int
     name: str
     enabled: bool
@@ -30,20 +31,28 @@ class APIKeyListItem(BaseModel):
 
 
 class UpdateAPIKeyRequest(BaseModel):
+    """Request model for updating an API key."""
     name: Optional[str] = None
     enabled: Optional[bool] = None
 
 
 class MessageResponse(BaseModel):
+    """Response model for a simple message."""
     message: str
 
 api_key_routes = APIRouter(prefix="/api-keys")
 
 
 def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
-    """
-    Verify the request is using the admin API key.
-    Raises HTTPException(403) if not authorized.
+    """Verifies the request is using the admin API key.
+
+    Args:
+        api_key (str, optional): The API key from the "X-API-Key" header. 
+            Defaults to Header(..., alias="X-API-Key").
+
+    Raises:
+        MissingAdminKeyException: If the admin key is not configured.
+        InvalidAdminKeyException: If the provided API key is invalid.
     """
     admin_key = os.getenv("ADMIN_API_KEY")
     
@@ -57,9 +66,17 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
 
 @api_key_routes.get("/create-key/{username}", dependencies=[Depends(verify_admin_key)])
 def create_api_key(username: str):
-    """
-    Create a new API key.
-    Returns the full key value - this is the only time it will be shown.
+    """Creates a new API key.
+
+    Args:
+        username (str): The name of the user to create the key for.
+
+    Raises:
+        FailedToCreateApiKeyException: If the API key could not be created.
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        CreateAPIKeyResponse: The new API key details.
     """
     try:
         key_config = create_key(username)
@@ -82,8 +99,13 @@ def create_api_key(username: str):
 
 @api_key_routes.get("/list-keys", response_model=list[APIKeyListItem], dependencies=[Depends(verify_admin_key)])
 def list_api_keys():
-    """
-    List all API keys without exposing the actual key values.
+    """Lists all API keys without exposing the actual key values.
+
+    Raises:
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        list[APIKeyListItem]: A list of all API keys.
     """
     try:
         keys = list_all_keys()
@@ -109,8 +131,17 @@ def list_api_keys():
 
 @api_key_routes.delete("/delete-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
 def delete_api_key(key_id: int):
-    """
-    Delete an API key by ID.
+    """Deletes an API key by ID.
+
+    Args:
+        key_id (int): The ID of the API key to delete.
+
+    Raises:
+        FailedToDeleteApiKeyException: If the API key could not be deleted.
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        MessageResponse: A message indicating the result of the deletion.
     """
     try:
         success = delete_key(key_id)
@@ -129,8 +160,17 @@ def delete_api_key(key_id: int):
 
 @api_key_routes.patch("/update-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
 def update_api_key(key_id: int, request: UpdateAPIKeyRequest):
-    """
-    Update API key properties (name and/or enabled status).
+    """Updates API key properties (name and/or enabled status).
+
+    Args:
+        key_id (int): The ID of the API key to update.
+        request (UpdateAPIKeyRequest): The request body containing the new values.
+
+    Raises:
+        HTTPException: If the request is invalid or an unexpected error occurs.
+
+    Returns:
+        MessageResponse: A message indicating the result of the update.
     """
     try:
         if request.name is None and request.enabled is None:

@@ -17,6 +17,19 @@ from services.geolocation.address_to_coord import address_to_coord
 
 
 def search_by_property_bbl(bbl: str):
+    """Searches for a property by its BBL.
+
+    Args:
+        bbl (str): The BBL of the property to search for.
+
+    Raises:
+        InvalidBBLException: If the BBL is invalid.
+        BBLNotFoundException: If the BBL is not found.
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        dict: A dictionary containing the property information.
+    """
     if not bbl:
         logger.warning("An attempt was made to search for a property without providing a BBL.")
         raise InvalidBBLException("BBL cannot be empty")

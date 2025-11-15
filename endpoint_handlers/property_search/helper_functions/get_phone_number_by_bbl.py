@@ -3,6 +3,15 @@ from logger_config import logger
 
 
 def get_phone_number_by_bbl(bbl:str):
+    """Gets phone numbers for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property to get phone numbers for.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the phone numbers and names of the owners.
+            Returns an empty list if no phone numbers are found or if an error occurs.
+    """
     if not bbl:
         logger.warning("Attempted to get phone number without a BBL.")
         return []

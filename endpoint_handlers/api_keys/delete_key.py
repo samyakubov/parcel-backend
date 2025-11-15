@@ -3,9 +3,16 @@ from endpoint_handlers.api_keys.exceptions import FailedToDeleteApiKeyException
 from logger_config import logger
 
 def delete_key(key_id: int) -> bool:
-    """
-    Delete an API key by ID.
-    Returns True if key was deleted, False if key didn't exist.
+    """Deletes an API key by its ID.
+
+    Args:
+        key_id (int): The ID of the API key to delete.
+
+    Returns:
+        bool: True if the key was deleted, False if the key didn't exist.
+
+    Raises:
+        FailedToDeleteApiKeyException: If the key could not be deleted.
     """
     if not isinstance(key_id, int):
         logger.error(f"Invalid key ID type for deletion: {type(key_id)}. Must be an integer.")

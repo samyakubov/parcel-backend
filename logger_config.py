@@ -2,6 +2,15 @@ import logging
 import os
 
 def setup_logger(logger_name: str, level: int = logging.DEBUG) -> logging.Logger:
+    """Sets up a logger with console and file handlers.
+
+    Args:
+        logger_name (str): The name of the logger.
+        level (int, optional): The logging level. Defaults to logging.DEBUG.
+
+    Returns:
+        logging.Logger: The configured logger.
+    """
     logger = logging.getLogger(logger_name)
     logger.setLevel(level)
 

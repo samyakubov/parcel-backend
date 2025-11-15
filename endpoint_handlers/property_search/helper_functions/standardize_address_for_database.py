@@ -41,6 +41,24 @@ ABBREVIATIONS = {
 ABBREVIATIONS_COMPILED = {re.compile(pattern): replacement for pattern, replacement in ABBREVIATIONS.items()}
 
 def standardize_address(address: str) -> str:
+    """Standardizes an address string.
+
+    This function takes an address string and performs the following standardizations:
+    - Converts the address to lowercase.
+    - Replaces common abbreviations with their full words (e.g., "st" to "street").
+    - Removes ordinal suffixes from numbers (e.g., "1st" to "1").
+    - Removes extra whitespace.
+    - Converts the entire address to uppercase.
+
+    Args:
+        address (str): The address string to standardize.
+
+    Returns:
+        str: The standardized address string.
+
+    Raises:
+        ValueError: If the address is not a string or cannot be converted to a string.
+    """
     if not isinstance(address, str):
         logger.warning(f"standardize_address received a non-string value: {address}")
         try:

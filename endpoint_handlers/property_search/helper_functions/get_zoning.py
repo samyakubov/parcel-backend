@@ -3,6 +3,17 @@ from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
 
 def get_zoning(bbl:str):
+    """Gets the zoning information for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property to get zoning information for.
+
+    Returns:
+        dict: A dictionary containing the zoning information, or None if no information is found.
+
+    Raises:
+        InvalidBBLException: If the BBL is invalid.
+    """
     if not bbl:
         raise InvalidBBLException
     try:

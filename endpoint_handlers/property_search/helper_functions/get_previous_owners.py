@@ -5,6 +5,18 @@ from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
 def get_previous_home_owners(bbl:str):
+    """Gets the previous home owners for a given BBL.
+
+    This function first tries to find the owners from deed documents.
+    If no owners are found, it then tries to find the owners from the latest mortgage document.
+
+    Args:
+        bbl (str): The BBL of the property to get the previous home owners for.
+
+    Returns:
+        list: A list of strings, where each string is the owner's name and their phone number.
+            Returns an empty list if no owners are found or if an error occurs.
+    """
     if not bbl or not isinstance(bbl, str):
         logger.error(f"Invalid BBL provided: '{bbl}'. It must be a non-empty string.")
         return []

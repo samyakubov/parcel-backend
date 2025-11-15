@@ -7,17 +7,15 @@ from endpoint_handlers.api_keys.update_key import update_last_used
 from logger_config import logger
 
 async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
-    """
-    FastAPI dependency that validates API key from X-API-Key header.
-    `
-    Args:
-        x_api_key: API key from X-API-Key header
+    """FastAPI dependency that validates an API key from the X-API-Key header.
 
-    Returns:
-        APIKeyConfig: Configuration for the validated API key
+    Args:
+        x_api_key (Optional[str], optional): The API key from the X-API-Key header. 
+            Defaults to Header(None, alias="X-API-Key").
 
     Raises:
-        HTTPException: 401 if API key is invalid, missing, or disabled
+        MissingApiKeyException: If the API key is missing.
+        InvalidApiKeyException: If the API key is invalid or disabled.
     """
 
     # Check if API key is provided

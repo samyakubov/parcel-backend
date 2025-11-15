@@ -2,6 +2,14 @@ import re
 from logger_config import logger
 
 def _ordinal(n):
+    """Converts a number to its ordinal representation.
+
+    Args:
+        n: The number to convert.
+
+    Returns:
+        str: The ordinal representation of the number.
+    """
     try:
         n = int(n)
         if 10 <= n % 100 <= 20:
@@ -15,6 +23,14 @@ def _ordinal(n):
 
 
 def add_ordinal_to_street_number(address):
+    """Adds an ordinal suffix to the street number in an address.
+
+    Args:
+        address (str): The address string.
+
+    Returns:
+        str: The address string with an ordinal suffix added to the street number.
+    """
     if not isinstance(address, str):
         logger.warning(f"add_ordinal_to_street_number received a non-string value: {address}")
         return address

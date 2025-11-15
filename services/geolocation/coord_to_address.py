@@ -5,6 +5,16 @@ import certifi
 from logger_config import logger
 
 def coord_to_address(latitude: float, longitude: float):
+    """
+    Convert geographic coordinates into a formatted street address.
+
+    Args:
+        latitude (float): Latitude of the location.
+        longitude (float): Longitude of the location.
+
+    Returns:
+        dict | None: A dictionary containing the formatted address, or None if lookup fails.
+    """
     if latitude is None or longitude is None:
         logger.error("Latitude and/or longitude were not provided for reverse geocoding.")
         return None

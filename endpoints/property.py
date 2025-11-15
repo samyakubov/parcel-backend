@@ -9,14 +9,39 @@ property_routes = APIRouter(prefix="/property")
 
 @property_routes.get("/search_by_property_address/address={address}", dependencies=[Depends(validate_api_key)], response_model=Dict)
 def search_by_address(address):
+    """Searches for a property by its address.
+
+    Args:
+        address (str): The address of the property to search for.
+
+    Returns:
+        Dict: A dictionary containing the property information.
+    """
     return search_by_property_address(address)
 
 @property_routes.get("/search_by_property_bbl/bbl={bbl}", dependencies=[Depends(validate_api_key)], response_model=Dict)
 def search_by_bbl(bbl:str):
+    """Searches for a property by its BBL (Borough, Block, Lot).
+
+    Args:
+        bbl (str): The BBL of the property to search for.
+
+    Returns:
+        Dict: A dictionary containing the property information.
+    """
     return search_by_property_bbl(bbl)
 
 @property_routes.get("/search_by_fuzzy_coords/lat={lat}/long={long}", dependencies=[Depends(validate_api_key)], response_model=Dict)
 def search_by_fuzz_coords(lat,long):
+    """Searches for a property by its fuzzy coordinates.
+
+    Args:
+        lat (str): The latitude of the property.
+        long (str): The longitude of the property.
+
+    Returns:
+        Dict: A dictionary containing the property information, or an error message.
+    """
     try:
         address = coord_to_address(lat, long)['address']
         return search_by_property_address(address)

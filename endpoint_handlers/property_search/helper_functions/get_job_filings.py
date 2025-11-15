@@ -3,6 +3,15 @@ from logger_config import logger
 
 
 def get_job_filings(bbl:str):
+    """Gets job filings for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property to get job filings for.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary is a job filing.
+            Returns an empty list if no job filings are found or if an error occurs.
+    """
     if not bbl:
         logger.warning("Attempted to get job filings without a BBL.")
         return []

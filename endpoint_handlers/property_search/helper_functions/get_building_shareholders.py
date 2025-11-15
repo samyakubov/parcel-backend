@@ -3,6 +3,18 @@ from logger_config import logger
 
 
 def get_building_shareholders(bbl: str):
+    """Gets the current shareholders of a building.
+
+    This function analyzes the transaction history of a building to determine the current shareholders.
+    It does this by looking at the latest buy and sell transactions for each party.
+
+    Args:
+        bbl (str): The BBL of the building.
+
+    Returns:
+        list: A list of the current shareholders. Returns an empty list if no shareholders are found
+            or if an error occurs.
+    """
     if not bbl:
         logger.error("BBL is required to get building shareholders, but none was provided.")
         return []

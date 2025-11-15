@@ -14,6 +14,19 @@ from services.geolocation.address_to_coord import address_to_coord
 from database_connector import db
 
 def search_by_property_address(address: str):
+    """Searches for a property by its address.
+
+    Args:
+        address (str): The address of the property to search for.
+
+    Raises:
+        InvalidAddressException: If the address is invalid.
+        AddressNotFoundException: If the address is not found.
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        dict: A dictionary containing the property information.
+    """
     if not address:
         logger.warning("An attempt was made to search for a property without providing an address.")
         raise InvalidAddressException

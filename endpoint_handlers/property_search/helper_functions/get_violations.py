@@ -3,6 +3,15 @@ from logger_config import logger
 
 
 def get_violations(bbl:str):
+    """Gets violations for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property to get violations for.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary is a violation.
+            Returns an empty list if no violations are found or if an error occurs.
+    """
     if not bbl:
         logger.warning("Attempted to get violations without a BBL.")
         return []

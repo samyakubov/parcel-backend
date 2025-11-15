@@ -3,6 +3,15 @@ from logger_config import logger
 
 
 def get_phone_number_by_name(party_name:str):
+    """Gets phone numbers for a given party name.
+
+    Args:
+        party_name (str): The name of the party to search for.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the phone numbers and names of the owners.
+            Returns an empty list if no phone numbers are found or if an error occurs.
+    """
     if not party_name:
         logger.warning("Attempted to get phone number by name without providing a name.")
         return []

@@ -3,6 +3,15 @@ from database_connector import db
 
 
 def search_by_party_name(last_name: str, first_name: str):
+    """Searches for ACRIS records by party name.
+
+    Args:
+        last_name (str): The last name of the party.
+        first_name (str): The first name of the party.
+
+    Returns:
+        dict: A dictionary containing the search results or an error message.
+    """
     if not last_name or not first_name:
         logger.warning("Search by party name was called without a last name or first name.")
         return {"message": "Both first and last name are required.", "status_code": 400}

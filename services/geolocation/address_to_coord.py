@@ -6,6 +6,15 @@ from logger_config import logger
 
 
 def address_to_coord(address: str):
+    """
+    Convert a street address into geographic coordinates.
+
+    Args:
+        address (str): The address to lookup.
+
+    Returns:
+        dict | None: A dictionary with latitude and longitude, or None if lookup fails.
+    """
     if not address:
         logger.error("No address was provided for geocoding.")
         return None

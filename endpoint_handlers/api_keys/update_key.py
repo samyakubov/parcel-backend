@@ -2,9 +2,15 @@ from typing import Optional
 from database_connector import db
 
 def update_key(key_id: int, name: Optional[str] = None, enabled: Optional[bool] = None) -> bool:
-    """
-    Update API key properties (name and/or enabled status).
-    Returns True if key was updated, False if key didn't exist.
+    """Updates the properties of an API key.
+
+    Args:
+        key_id (int): The ID of the API key to update.
+        name (Optional[str], optional): The new name for the API key. Defaults to None.
+        enabled (Optional[bool], optional): The new enabled status for the API key. Defaults to None.
+
+    Returns:
+        bool: True if the key was updated, False if the key didn't exist.
     """
     # Build dynamic update query based on provided parameters
     updates = []
@@ -38,9 +44,12 @@ def update_key(key_id: int, name: Optional[str] = None, enabled: Optional[bool] 
 
 
 def update_last_used(api_key: str):
-    """
-    Update the last_used_at timestamp for a key.
-    Called when a key is successfully used for authentication.
+    """Updates the last_used_at timestamp for an API key.
+
+    This function is called when a key is successfully used for authentication.
+
+    Args:
+        api_key (str): The API key that was used.
     """
     query = """
             UPDATE api_keys

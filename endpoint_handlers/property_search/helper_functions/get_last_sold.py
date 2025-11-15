@@ -5,6 +5,20 @@ import pandas as pd
 
 
 def get_last_sold(bbl: str):
+    """Gets the last sold information for a given BBL.
+
+    This function compares the latest sale record and the latest deed record to determine the most accurate
+    last sold information.
+
+    Args:
+        bbl (str): The BBL of the property to get the last sold information for.
+
+    Returns:
+        dict: A dictionary containing the last sold information, or None if no information is found.
+
+    Raises:
+        InvalidBBLException: If the BBL is invalid.
+    """
     if not isinstance(bbl, str) or not bbl.strip():
         raise InvalidBBLException
     try:
@@ -46,6 +60,14 @@ def get_last_sold(bbl: str):
 
 
 def _get_latest_sale_record(bbl: str):
+    """Gets the latest sale record for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property.
+
+    Returns:
+        dict: A dictionary containing the latest sale record information, or None if no record is found.
+    """
     logger.info(f"Querying for latest sale record for BBL: {bbl}")
     sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
     if sales_df.empty:
@@ -70,6 +92,14 @@ def _get_latest_sale_record(bbl: str):
 
 
 def _get_latest_deed_record(bbl: str):
+    """Gets the latest deed record for a given BBL.
+
+    Args:
+        bbl (str): The BBL of the property.
+
+    Returns:
+        dict: A dictionary containing the latest deed record information, or None if no record is found.
+    """
     logger.info(f"Querying for latest deed record for BBL: {bbl}")
     deeds_df = db.execute_df("""
          SELECT
@@ -100,8 +130,19 @@ def _get_latest_deed_record(bbl: str):
         "sale_date": latest.sale_date
     }
 
-#this is to handle deed transfers between family members/trusts
 def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Series) :
+    """Handles cases where the latest deed has a low price.
+
+    This can happen in cases of deed transfers between family members or trusts.
+
+    Args:
+        bbl (str): The BBL of the property.
+        deeds_df (pd.DataFrame): A DataFrame of deed records.
+        latest (pd.Series): The latest deed record.
+
+    Returns:
+        dict: A dictionary containing the last sold information, or the result of _match_deed_with_mortgage.
+    """
     if len(deeds_df) > 1:
         prev = deeds_df.iloc[1]
         if prev.deed_party_name == latest.deed_party_name and prev.last_sold_price > 1000:
@@ -113,8 +154,16 @@ def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Ser
 
     return _match_deed_with_mortgage(bbl, deeds_df)
 
-#TODO:Find out why I did this
 def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame):
+    """Matches a low-price deed with a mortgage.
+
+    Args:
+        bbl (str): The BBL of the property.
+        deeds_df (pd.DataFrame): A DataFrame of deed records.
+
+    Returns:
+        dict: A dictionary containing the last sold information, or None if no match is found.
+    """
     logger.info(f"Attempting to match low-price deed with a mortgage for BBL: {bbl}")
     query = """
             SELECT party_name AS mortgage_party_name, MAX(record_filed) AS latest_mortgage_date

@@ -5,6 +5,15 @@ from logger_config import logger
 
 
 def get_complaints(address: str):
+    """Gets complaints for a given address.
+
+    Args:
+        address (str): The address to get complaints for.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary is a complaint.
+            Returns an empty list if no complaints are found or if an error occurs.
+    """
     if not address:
         logger.warning("An attempt was made to get complaints without providing an address.")
         return []

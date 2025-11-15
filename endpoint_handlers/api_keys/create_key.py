@@ -5,9 +5,17 @@ from endpoint_handlers.api_keys.exceptions import FailedToCreateApiKeyException
 from logger_config import logger
 
 def create_key(name: str) -> APIKeyConfig:
-    """
-    Generate and store a new API key.
-    Returns the created APIKeyConfig with the generated key.
+    """Generates and stores a new API key.
+
+    Args:
+        name (str): The name to associate with the API key.
+
+    Returns:
+        APIKeyConfig: The created APIKeyConfig with the generated key.
+
+    Raises:
+        ValueError: If the name is empty.
+        FailedToCreateApiKeyException: If the key could not be created.
     """
     if not name:
         logger.warning("Attempted to create an API key without a name.")

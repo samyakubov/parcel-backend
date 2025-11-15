@@ -1,7 +1,11 @@
 from database_connector import db
 
 def init_key_table():
-    """Create api_keys table if it doesn't exist"""
+    """Initializes the `api_keys` table in the database.
+
+    This function creates the `api_keys` table if it does not already exist.
+    It also creates a sequence for the auto-incrementing primary key.
+    """
     # Create sequence for auto-incrementing ID
     sequence_query = """
         CREATE SEQUENCE IF NOT EXISTS api_keys_id_seq START 1;
