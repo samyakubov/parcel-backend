@@ -5,33 +5,37 @@ from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
 def get_current_home_owner(bbl: str):
-    try:
-        if not bbl or not isinstance(bbl, str):
-            logger.error("Invalid BBL provided. It must be a non-empty string.")
-            return "Invalid BBL provided. It must be a non-empty string."
+    if not bbl or not isinstance(bbl, str):
+        logger.error(f"Invalid BBL provided: '{bbl}'. It must be a non-empty string.")
+        return []
 
+    try:
+        logger.info(f"Searching for current home owner of BBL: {bbl}")
         deed_doc = db.execute("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'DEED' GROUP BY documentid, record_filed ORDER BY record_filed DESC LIMIT 1", [bbl])
         phone_numbers = get_phone_number_by_bbl(bbl)
 
         if deed_doc:
+            logger.info(f"Found latest deed document with ID {deed_doc[0][0]} for BBL {bbl}. Fetching grantee records.")
             deed_records = db.execute_df("SELECT party_name AS current_owner FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'GRANTEE/BUYER' ", [deed_doc[0][0]])
             if not deed_records.empty:
                 owners = list(set(deed_records["current_owner"].tolist()))
+                logger.info(f"Found {len(owners)} owner(s) from deed record for BBL {bbl}. Matching with phone numbers.")
                 return match_phone_numbers_to_owner(phone_numbers, owners)
 
-
+        logger.info(f"No definitive owner found from deed records for BBL {bbl}. Checking mortgage records.")
         mortgage_doc = db.execute("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, record_filed, bbl, doc_type ORDER BY record_filed DESC LIMIT 1", [bbl])
 
         if mortgage_doc:
+            logger.info(f"Found latest mortgage document with ID {mortgage_doc[0][0]} for BBL {bbl}. Fetching mortgagor records.")
             mortgage_records = db.execute_df("SELECT party_name AS current_owner FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", [mortgage_doc[0][0]])
             if not mortgage_records.empty:
                 owners = list(set(mortgage_records["current_owner"].tolist()))
+                logger.info(f"Found {len(owners)} owner(s) from mortgage record for BBL {bbl}. Matching with phone numbers.")
                 return match_phone_numbers_to_owner(phone_numbers, owners)
 
-
-        logger.warning(f"No current owner found for BBL: {bbl}")
+        logger.warning(f"No current owner could be determined for BBL: {bbl} from available records.")
         return []
 
-    except (ValueError, Exception) as e:
-        logger.error(f"Error in get_current_owner for BBL {bbl}: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while getting current home owner for BBL {bbl}: {e}", exc_info=True)
         return []

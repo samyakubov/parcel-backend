@@ -1,4 +1,5 @@
 import re
+from logger_config import logger
 
 ABBREVIATIONS = {
     r'\bave\b': 'avenue',
@@ -41,7 +42,12 @@ ABBREVIATIONS_COMPILED = {re.compile(pattern): replacement for pattern, replacem
 
 def standardize_address(address: str) -> str:
     if not isinstance(address, str):
-        raise ValueError("Address must be a string.")
+        logger.warning(f"standardize_address received a non-string value: {address}")
+        try:
+            address = str(address)
+        except Exception as e:
+            logger.error(f"Could not convert input to string in standardize_address: {e}", exc_info=True)
+            raise ValueError("Address must be a string or convertible to a string.")
 
     address = address.lower()
 

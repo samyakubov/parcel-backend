@@ -5,3 +5,5 @@ __pycache__/
 /logs/
 /nycdb.duckdb.wal
 /.vscode/
+/.kiro/
+/.env

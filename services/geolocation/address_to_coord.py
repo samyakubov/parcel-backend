@@ -7,7 +7,8 @@ from logger_config import logger
 
 def address_to_coord(address: str):
     if not address:
-        logger.error("No address was provided")
+        logger.error("No address was provided for geocoding.")
+        return None
     try:
         ctx = ssl.create_default_context(cafile=certifi.where())
 
@@ -21,16 +22,21 @@ def address_to_coord(address: str):
         location = geolocator.geocode(address)
 
         if location:
+            logger.info(f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})")
             return {
                 "latitude": location.latitude,
                 "longitude": location.longitude
             }
         else:
-            logger.error("Address not found")
+            logger.warning(f"Could not find location for address: '{address}'")
+            return None
 
     except GeocoderTimedOut:
-        logger.error("The geocoding service timed out. Please try again later.")
-    except GeocoderServiceError as g:
-        logger.error(f"Geocoding service error: {g}")
+        logger.error("The geocoding service timed out while processing address: '{address}'.", exc_info=True)
+        return None
+    except GeocoderServiceError as e:
+        logger.error(f"A geocoding service error occurred for address '{address}': {e}", exc_info=True)
+        return None
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logger.error(f"An unexpected error occurred during geocoding for address '{address}': {e}", exc_info=True)
+        return None

@@ -1,3 +1,5 @@
+from endpoint_handlers.api_keys.exceptions import MissingApiKeyException, InvalidApiKeyException, \
+    InvalidAdminKeyException
 from endpoint_handlers.property_search.exceptions import InvalidBBLException, BBLNotFoundException, InvalidAddressException, AddressNotFoundException
 from fastapi import Request, status, HTTPException
 from fastapi.responses import JSONResponse
@@ -34,5 +36,33 @@ def register_exception_handlers(app):
     async def address_not_found_handler(request: Request, exc: AddressNotFoundException):
         return JSONResponse(
             status_code=404,
+            content={"message": str(exc)}
+        )
+
+    @app.exception_handler(MissingApiKeyException)
+    async def missing_api_key_handler(request: Request, exc: MissingApiKeyException):
+        return JSONResponse(
+            status_code=401,
+            content={"message": str(exc)}
+        )
+
+    @app.exception_handler(InvalidApiKeyException)
+    async def invalid_api_key_handler(request: Request, exc: InvalidApiKeyException):
+        return JSONResponse(
+            status_code=400,
+            content={"message": str(exc)}
+        )
+
+    @app.exception_handler(InvalidAdminKeyException)
+    async def invalid_admin_key_handler(request: Request, exc: InvalidAdminKeyException):
+        return JSONResponse(
+            status_code=403,
+            content={"message": str(exc)}
+        )
+
+    @app.exception_handler(MissingApiKeyException)
+    async def missing_api_key_handler(request: Request, exc: MissingApiKeyException):
+        return JSONResponse(
+            status_code=500,
             content={"message": str(exc)}
         )

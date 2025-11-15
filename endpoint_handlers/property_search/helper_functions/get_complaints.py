@@ -5,13 +5,22 @@ from logger_config import logger
 
 
 def get_complaints(address: str):
-    parts = standardize_address(address).strip().split(' ', 1)
-    if len(parts) != 2:
+    if not address:
+        logger.warning("An attempt was made to get complaints without providing an address.")
         return []
 
-    house_number, street = parts
-    street = street.strip().upper()
     try:
+        logger.info(f"Fetching complaints for address: '{address}'")
+        standardized_addr = standardize_address(address)
+        parts = standardized_addr.strip().split(' ', 1)
+        if len(parts) != 2:
+            logger.warning(f"Could not parse standardized address '{standardized_addr}' into house number and street.")
+            return []
+
+        house_number, street = parts
+        street = street.strip().upper()
+        
+        logger.info(f"Querying database for complaints for house number '{house_number}' and street '{street}'.")
         df = db.execute_df("""SELECT 
                                 complaintnumber as complaint_number,
                                 dateentered as date_entered,
@@ -22,23 +31,25 @@ def get_complaints(address: str):
                                 dispositioncode as disposition_code,
                                 inspectiondate as inspection_date,
                                 dobrundate as dobrun_date,
-                                bin as bin,
+                                bin as bin
                               FROM dob_complaints 
                               WHERE housenumber = ? 
                                 AND housestreet LIKE ? 
                               ORDER BY dateentered DESC""",
                            [str(house_number), f"{street}%"])
         if df.empty:
+            logger.info(f"No complaints found for address: '{address}'.")
             return []
 
+        logger.info(f"Found {len(df)} complaints for address: '{address}'. Formatting date columns.")
         date_columns = ['date_entered', 'disposition_date', 'inspection_date', 'dobrun_date']
         for col in date_columns:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col]).dt.strftime('%Y-%m-%d')
+                df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
 
         df = df.sort_values('date_entered', ascending=False)
 
         return df.to_dict(orient="records")
     except Exception as e:
-        logger.error(f"Error retrieving complaints for address {address}: {str(e)}")
+        logger.error(f"An unexpected error occurred while retrieving complaints for address '{address}': {e}", exc_info=True)
         return []
