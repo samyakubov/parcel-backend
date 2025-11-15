@@ -1,10 +1,10 @@
 from database_connector import db
+from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
 
 def get_zoning(bbl:str):
     if not bbl:
-        logger.warning("Attempted to get zoning information without a BBL.")
-        return None
+        raise InvalidBBLException
     try:
         logger.info(f"--------------------Fetching zoning information for BBL: {bbl}--------------------")
         result = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])

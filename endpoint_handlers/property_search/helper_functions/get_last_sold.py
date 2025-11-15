@@ -6,9 +6,7 @@ import pandas as pd
 
 def get_last_sold(bbl: str):
     if not isinstance(bbl, str) or not bbl.strip():
-        error_msg = f"Invalid BBL provided in get_last_sold: '{bbl}'"
-        logger.error(error_msg)
-        raise InvalidBBLException(error_msg)
+        raise InvalidBBLException
     try:
         logger.info(f"--------------------Fetching last sold information for BBL: {bbl}--------------------")
         sale_data = _get_latest_sale_record(bbl)

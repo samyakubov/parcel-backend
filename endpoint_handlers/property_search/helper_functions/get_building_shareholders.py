@@ -7,7 +7,7 @@ def get_building_shareholders(bbl: str):
         logger.error("BBL is required to get building shareholders, but none was provided.")
         return []
     try:
-        logger.info(f"Fetching building shareholders for BBL: {bbl}")
+        logger.info(f"--------------------Fetching building shareholders for BBL: {bbl}--------------------")
         all_transactions = db.execute_df("""
                                         SELECT party_name as current_owner,
                                         CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, record_filed AS transaction_date
@@ -19,7 +19,7 @@ def get_building_shareholders(bbl: str):
                                          """, [bbl])
 
         if all_transactions.empty:
-            logger.warning(f"No shareholder transactions found for BBL: {bbl}")
+            logger.warning(f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n")
             return []
 
         logger.info(f"Found {len(all_transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status.")
@@ -35,11 +35,11 @@ def get_building_shareholders(bbl: str):
 
 
         if current_shareholders.empty:
-            logger.warning(f"Could not determine current shareholders for BBL: {bbl} from transaction analysis.")
+            logger.warning(f"--------------------Could not determine current shareholders for BBL: {bbl} from transaction analysis--------------------\n")
             return []
 
         shareholder_list = current_shareholders['current_owner'].tolist()
-        logger.info(f"Successfully identified {len(shareholder_list)} current shareholders for BBL: {bbl}.")
+        logger.info(f"--------------------Successfully identified {len(shareholder_list)} current shareholders for BBL: {bbl}--------------------\n")
         return shareholder_list
     except Exception as e:
         logger.error(f"An unexpected error occurred while retrieving building shareholders for BBL {bbl}: {e}", exc_info=True)

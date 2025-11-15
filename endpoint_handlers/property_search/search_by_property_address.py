@@ -16,7 +16,7 @@ from database_connector import db
 def search_by_property_address(address: str):
     if not address:
         logger.warning("An attempt was made to search for a property without providing an address.")
-        raise InvalidAddressException("Address cannot be empty")
+        raise InvalidAddressException
 
     try:
         logger.info(f"--------------------------Starting property search for address: '{address}'--------------------------")
