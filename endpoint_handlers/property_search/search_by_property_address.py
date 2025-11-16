@@ -1,6 +1,3 @@
-from fastapi import HTTPException
-from starlette import status
-
 from database_connector import DatabaseConnector
 from exceptions.property_search_exceptions import AddressNotFoundException, InvalidAddressException
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
@@ -76,7 +73,6 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
 
         logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
         
-        # Get coordinates, but don't fail if geolocation service is unavailable
         try:
             coordinates = address_to_coord(address)
         except Exception as e:

@@ -67,7 +67,6 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector):
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
         
-        # Get coordinates, but don't fail if geolocation service is unavailable
         try:
             address_str = add_ordinal_to_street_number(
                 standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower())
