@@ -1,8 +1,8 @@
+from database_connector import DatabaseConnector
 from logger_config import logger
-from database_connector import db
 
 
-def search_by_party_name(last_name: str, first_name: str):
+def search_by_party_name(last_name: str, first_name: str, db: DatabaseConnector):
     """Searches for ACRIS records by party name.
 
     Args:

@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from starlette import status
-
 from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.exceptions import BBLNotFoundException, InvalidBBLException
 from endpoint_handlers.property_search.helper_functions.add_ordinal_to_street_number import add_ordinal_to_street_number

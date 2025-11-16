@@ -2,7 +2,7 @@ from typing import Dict
 from fastapi import APIRouter, Depends
 
 from database_connector import DatabaseConnector
-from main import get_db
+from database_connector import get_db
 from endpoint_handlers.api_keys.validate_api_key import validate_api_key
 from endpoint_handlers.property_search.search_by_property_address import search_by_property_address
 from endpoint_handlers.property_search.search_by_property_bbl import search_by_property_bbl

@@ -60,3 +60,13 @@ class DatabaseConnector:
         if self.conn:
             self.conn.close()
             self.conn = None
+
+
+
+def get_db():
+    db = DatabaseConnector("nycdb.duckdb")
+    try:
+        db.connect()
+        yield db
+    finally:
+        db.close()

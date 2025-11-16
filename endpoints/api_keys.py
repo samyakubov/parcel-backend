@@ -2,7 +2,7 @@ import os
 from fastapi import APIRouter, Header, HTTPException, Depends
 from starlette import status
 from database_connector import DatabaseConnector
-from main import get_db
+from database_connector import get_db
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
 from endpoint_handlers.api_keys.exceptions import MissingAdminKeyException, InvalidAdminKeyException, FailedToCreateApiKeyException, FailedToDeleteApiKeyException

@@ -1,8 +1,8 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_phone_number_by_name(party_name:str):
+def get_phone_number_by_name(party_name:str, db: DatabaseConnector):
     """Gets phone numbers for a given party name.
 
     Args:
