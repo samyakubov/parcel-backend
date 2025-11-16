@@ -1,14 +1,15 @@
 import re
+from typing import Union
 from logger_config import logger
 
-def _ordinal(n):
+def _ordinal(n) -> Union[str, int]:
     """Converts a number to its ordinal representation.
 
     Args:
         n: The number to convert.
 
     Returns:
-        str: The ordinal representation of the number.
+        Union[str, int]: The ordinal representation of the number, or the original value if conversion fails.
     """
     try:
         n = int(n)
@@ -22,7 +23,7 @@ def _ordinal(n):
         return n
 
 
-def add_ordinal_to_street_number(address):
+def add_ordinal_to_street_number(address) -> str:
     """Adds an ordinal suffix to the street number in an address.
 
     Args:

@@ -13,7 +13,7 @@ from database_connector import DatabaseError
 logger = logging.getLogger(__name__)
 
 
-def register_exception_handlers(app):
+def register_exception_handlers(app) -> None:
     """Registers exception handlers for the FastAPI application.
 
     Args:
@@ -21,7 +21,7 @@ def register_exception_handlers(app):
     """
 
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         """Handles any unhandled exceptions.
 
         Args:
@@ -38,7 +38,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, exc: HTTPException):
+    async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
         """Handles HTTPExceptions.
 
         Args:
@@ -55,7 +55,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(InvalidBBLException)
-    async def invalid_bbl_handler(request: Request, exc: InvalidBBLException):
+    async def invalid_bbl_handler(request: Request, exc: InvalidBBLException) -> JSONResponse:
         """Handles InvalidBBLExceptions.
 
         Args:
@@ -72,7 +72,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(BBLNotFoundException)
-    async def bbl_not_found_handler(request: Request, exc: BBLNotFoundException):
+    async def bbl_not_found_handler(request: Request, exc: BBLNotFoundException) -> JSONResponse:
         """Handles BBLNotFoundExceptions.
 
         Args:
@@ -89,7 +89,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(InvalidAddressException)
-    async def invalid_address_handler(request: Request, exc: InvalidAddressException):
+    async def invalid_address_handler(request: Request, exc: InvalidAddressException) -> JSONResponse:
         """Handles InvalidAddressExceptions.
 
         Args:
@@ -106,7 +106,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(AddressNotFoundException)
-    async def address_not_found_handler(request: Request, exc: AddressNotFoundException):
+    async def address_not_found_handler(request: Request, exc: AddressNotFoundException) -> JSONResponse:
         """Handles AddressNotFoundExceptions.
 
         Args:
@@ -123,7 +123,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(MissingApiKeyException)
-    async def missing_api_key_handler(request: Request, exc: MissingApiKeyException):
+    async def missing_api_key_handler(request: Request, exc: MissingApiKeyException) -> JSONResponse:
         """Handles MissingApiKeyExceptions.
 
         Args:
@@ -140,7 +140,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(InvalidApiKeyException)
-    async def invalid_api_key_handler(request: Request, exc: InvalidApiKeyException):
+    async def invalid_api_key_handler(request: Request, exc: InvalidApiKeyException) -> JSONResponse:
         """Handles InvalidApiKeyExceptions.
 
         Args:
@@ -157,7 +157,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(InvalidAdminKeyException)
-    async def invalid_admin_key_handler(request: Request, exc: InvalidAdminKeyException):
+    async def invalid_admin_key_handler(request: Request, exc: InvalidAdminKeyException) -> JSONResponse:
         """Handles InvalidAdminKeyExceptions.
 
         Args:
@@ -174,7 +174,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(APIKeyNotFoundException)
-    async def api_key_not_found_handler(request: Request, exc: APIKeyNotFoundException):
+    async def api_key_not_found_handler(request: Request, exc: APIKeyNotFoundException) -> JSONResponse:
         """Handles APIKeyNotFoundExceptions.
 
         Args:
@@ -191,7 +191,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(InvalidUpdateException)
-    async def invalid_update_handler(request: Request, exc: InvalidUpdateException):
+    async def invalid_update_handler(request: Request, exc: InvalidUpdateException) -> JSONResponse:
         """Handles InvalidUpdateExceptions.
 
         Args:
@@ -208,7 +208,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(MissingAdminKeyException)
-    async def missing_admin_key_handler(request: Request, exc: MissingAdminKeyException):
+    async def missing_admin_key_handler(request: Request, exc: MissingAdminKeyException) -> JSONResponse:
         """Handles MissingAdminKeyExceptions.
 
         Args:
@@ -225,7 +225,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(FailedToCreateApiKeyException)
-    async def failed_to_create_api_key_handler(request: Request, exc: FailedToCreateApiKeyException):
+    async def failed_to_create_api_key_handler(request: Request, exc: FailedToCreateApiKeyException) -> JSONResponse:
         """Handles FailedToCreateApiKeyExceptions.
 
         Args:
@@ -242,7 +242,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(FailedToDeleteApiKeyException)
-    async def failed_to_delete_api_key_handler(request: Request, exc: FailedToDeleteApiKeyException):
+    async def failed_to_delete_api_key_handler(request: Request, exc: FailedToDeleteApiKeyException) -> JSONResponse:
         """Handles FailedToDeleteApiKeyExceptions.
 
         Args:
@@ -259,7 +259,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(DatabaseError)
-    async def database_error_handler(request: Request, exc: DatabaseError):
+    async def database_error_handler(request: Request, exc: DatabaseError) -> JSONResponse:
         """Handles DatabaseErrors.
 
         Args:
@@ -276,7 +276,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(GeolocationException)
-    async def geolocation_error_handler(request: Request, exc: GeolocationException):
+    async def geolocation_error_handler(request: Request, exc: GeolocationException) -> JSONResponse:
         """Handles GeolocationExceptions.
 
         Args:
@@ -293,7 +293,7 @@ def register_exception_handlers(app):
         )
 
     @app.exception_handler(AddressNotInNewYorkException)
-    async def address_not_in_ny_handler(request: Request, exc: AddressNotInNewYorkException):
+    async def address_not_in_ny_handler(request: Request, exc: AddressNotInNewYorkException) -> JSONResponse:
         """Handles AddressNotInNewYorkExceptions.
 
         Args:

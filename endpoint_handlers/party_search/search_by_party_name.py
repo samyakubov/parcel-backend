@@ -1,13 +1,15 @@
+from typing import Dict, Union, List
 from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def search_by_party_name(last_name: str, first_name: str, db: DatabaseConnector):
+def search_by_party_name(last_name: str, first_name: str, db: DatabaseConnector) -> Dict[str, Union[str, int, List]]:
     """Searches for ACRIS records by party name.
 
     Args:
         last_name (str): The last name of the party.
         first_name (str): The first name of the party.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         dict: A dictionary containing the search results or an error message.

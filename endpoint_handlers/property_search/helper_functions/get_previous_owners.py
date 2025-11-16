@@ -1,10 +1,11 @@
+from typing import List
 from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.helper_functions.get_phone_number_by_bbl import get_phone_number_by_bbl
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
-def get_previous_home_owners(bbl:str, db: DatabaseConnector):
+def get_previous_home_owners(bbl:str, db: DatabaseConnector) -> List[str]:
     """Gets the previous homeowners for a given BBL.
 
     This function first tries to find the owners from deed documents.
@@ -15,7 +16,7 @@ def get_previous_home_owners(bbl:str, db: DatabaseConnector):
         db (DatabaseConnector): The database connector instance.
 
     Returns:
-        list: A list of strings, where each string is the owner's name and their phone number.
+        List[str]: A list of strings, where each string is the owner's name and their phone number.
             Returns an empty list if no owners are found or if an error occurs.
     """
     if not bbl or not isinstance(bbl, str):

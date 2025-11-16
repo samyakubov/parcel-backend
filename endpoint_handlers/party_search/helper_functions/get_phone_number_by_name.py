@@ -1,15 +1,18 @@
+import pandas as pd
+from typing import Union, List
 from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_phone_number_by_name(party_name:str, db: DatabaseConnector):
+def get_phone_number_by_name(party_name:str, db: DatabaseConnector) -> Union[pd.DataFrame, List]:
     """Gets phone numbers for a given party name.
 
     Args:
         party_name (str): The name of the party to search for.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
-        pandas.DataFrame: A DataFrame containing the phone numbers and names of the owners.
+        Union[pd.DataFrame, List]: A DataFrame containing the phone numbers and names of the owners.
             Returns an empty list if no phone numbers are found or if an error occurs.
     """
     if not party_name:

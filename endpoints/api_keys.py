@@ -13,7 +13,7 @@ from pydantic_models import CreateAPIKeyResponse, APIKeyListItem, MessageRespons
 api_key_routes = APIRouter(prefix="/api-keys")
 
 
-def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
+def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> None:
     """Verifies the request is using the admin API key.
 
     Args:
@@ -35,7 +35,7 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
 
 
 @api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
-def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
+def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
     """Creates a new API key.
 
     Args:
@@ -60,7 +60,7 @@ def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
 
 
 @api_key_routes.get("/list-keys", response_model=list[APIKeyListItem], dependencies=[Depends(verify_admin_key)])
-def list_api_keys(db: DatabaseConnector = Depends(get_db)):
+def list_api_keys(db: DatabaseConnector = Depends(get_db)) -> list[APIKeyListItem]:
     """Lists all API keys without exposing the actual key values.
 
     Args:
@@ -85,7 +85,7 @@ def list_api_keys(db: DatabaseConnector = Depends(get_db)):
 
 
 @api_key_routes.delete("/delete-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
+def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)) -> MessageResponse:
     """Deletes an API key by ID.
 
     Args:
@@ -107,7 +107,7 @@ def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
 
 
 @api_key_routes.patch("/update-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)):
+def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)) -> MessageResponse:
     """Updates API key properties (name and/or enabled status).
 
     Args:

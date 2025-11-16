@@ -1,4 +1,6 @@
 import duckdb
+import pandas as pd
+from typing import Generator
 from logger_config import logger
 
 
@@ -20,7 +22,7 @@ class DatabaseConnector:
         self.db_path = db_path
         self.conn = None
 
-    def connect(self):
+    def connect(self) -> duckdb.DuckDBPyConnection:
         """Connects to the DuckDB database.
 
         Returns:
@@ -33,7 +35,7 @@ class DatabaseConnector:
             self.conn = duckdb.connect(self.db_path)
         return self.conn
 
-    def execute(self, query, params=None):
+    def execute(self, query, params=None) -> list:
         """Executes a SQL query and fetches all results.
 
         Args:
@@ -58,7 +60,7 @@ class DatabaseConnector:
             logger.error(f"Database query execution failed: {e}", exc_info=True)
             raise DatabaseError(f"Query execution failed: {e}") from e
 
-    def execute_df(self, query, params=None):
+    def execute_df(self, query, params=None) -> pd.DataFrame:
         """Executes a SQL query and returns the results as a Pandas DataFrame.
 
         Args:
@@ -83,7 +85,7 @@ class DatabaseConnector:
             logger.error(f"Database query execution failed: {e}", exc_info=True)
             raise DatabaseError(f"Query execution failed: {e}") from e
 
-    def close(self):
+    def close(self) -> None:
         """Closes the database connection."""
         if self.conn:
             self.conn.close()
@@ -91,7 +93,7 @@ class DatabaseConnector:
 
 
 
-def get_db():
+def get_db() -> Generator[DatabaseConnector, None, None]:
     db = DatabaseConnector("nycdb.duckdb")
     try:
         db.connect()

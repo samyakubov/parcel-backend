@@ -1,6 +1,7 @@
 import pandas as pd
+from typing import List
 
-def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame, owners_list: list):
+def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame, owners_list: list) -> List[str]:
     """Matches phone numbers to a list of owner names.
 
     Args:
@@ -9,7 +10,7 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame, owners_list: list)
         owners_list (list): A list of owner names to match against.
 
     Returns:
-        list: A list of strings, where each string is the owner's name and their phone number
+        List[str]: A list of strings, where each string is the owner's name and their phone number
             in the format "owner_name (phone_number)". If no phone number is found,
             it will be "owner_name (No Phone Number)".
     """

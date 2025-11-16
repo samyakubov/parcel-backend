@@ -7,7 +7,7 @@ from exceptions.api_key_exceptions import MissingApiKeyException, InvalidApiKeyE
 from endpoint_handlers.api_keys.update_key import update_last_used
 from logger_config import logger
 
-async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key"), db: DatabaseConnector = Depends(get_db)):
+async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key"), db: DatabaseConnector = Depends(get_db)) -> None:
     """FastAPI dependency that validates an API key from the X-API-Key header.
 
     Args:

@@ -14,7 +14,7 @@ from logger_config import logger
 from pydantic_models import Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
 
-def search_by_property_bbl(bbl: str, db: DatabaseConnector):
+def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsResponse:
     """Searches for a property by its BBL.
 
     Args:

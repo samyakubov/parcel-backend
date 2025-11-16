@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union
 from fastapi import APIRouter, Depends
 from database_connector import DatabaseConnector
 from database_connector import get_db
@@ -11,7 +11,7 @@ from services.geolocation.coord_to_address import coord_to_address
 property_routes = APIRouter(prefix="/property")
 
 @property_routes.get("/search_by_property_address/address={address}", dependencies=[Depends(validate_api_key)], response_model=PropertyDetailsResponse)
-def search_by_address(address: str, db: DatabaseConnector = Depends(get_db)):
+def search_by_address(address: str, db: DatabaseConnector = Depends(get_db)) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
@@ -19,12 +19,12 @@ def search_by_address(address: str, db: DatabaseConnector = Depends(get_db)):
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
-        Dict: A dictionary containing the property information.
+        PropertyDetailsResponse: A response object containing the property information.
     """
     return search_by_property_address(address, db)
 
 @property_routes.get("/search_by_property_bbl/bbl={bbl}", dependencies=[Depends(validate_api_key)], response_model=PropertyDetailsResponse)
-def search_by_bbl(bbl:str, db: DatabaseConnector = Depends(get_db)):
+def search_by_bbl(bbl:str, db: DatabaseConnector = Depends(get_db)) -> PropertyDetailsResponse:
     """Searches for a property by its BBL (Borough, Block, Lot).
 
     Args:
@@ -32,12 +32,12 @@ def search_by_bbl(bbl:str, db: DatabaseConnector = Depends(get_db)):
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
-        Dict: A dictionary containing the property information.
+        PropertyDetailsResponse: A response object containing the property information.
     """
     return search_by_property_bbl(bbl, db)
 
 @property_routes.get("/search_by_fuzzy_coords/lat={lat}/long={long}", dependencies=[Depends(validate_api_key)], response_model=PropertyDetailsResponse)
-def search_by_fuzz_coords(lat: str, long: str, db: DatabaseConnector = Depends(get_db)):
+def search_by_fuzz_coords(lat: str, long: str, db: DatabaseConnector = Depends(get_db)) -> Union[PropertyDetailsResponse, Dict[str, Union[str, int]]]:
     """Searches for a property by its fuzzy coordinates.
 
     Args:
@@ -46,7 +46,7 @@ def search_by_fuzz_coords(lat: str, long: str, db: DatabaseConnector = Depends(g
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
-        Dict: A dictionary containing the property information, or an error message.
+        Union[PropertyDetailsResponse, Dict]: A response object containing the property information, or an error message dictionary.
     """
     try:
         address = coord_to_address(float(lat), float(long))['address']
