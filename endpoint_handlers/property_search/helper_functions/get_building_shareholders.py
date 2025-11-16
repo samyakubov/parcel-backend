@@ -1,9 +1,26 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_building_shareholders(bbl: str):
+def get_building_shareholders(bbl: str, db: DatabaseConnector):
+    """Gets the current shareholders of a building.
+
+    This function analyzes the transaction history of a building to determine the current shareholders.
+    It does this by looking at the latest buy and sell transactions for each party.
+
+    Args:
+        bbl (str): The BBL of the building.
+        db (DatabaseConnector): The database connector instance.
+
+    Returns:
+        list: A list of the current shareholders. Returns an empty list if no shareholders are found
+            or if an error occurs.
+    """
+    if not bbl:
+        logger.error("BBL is required to get building shareholders, but none was provided.")
+        return []
     try:
+        logger.info(f"--------------------Fetching building shareholders for BBL: {bbl}--------------------")
         all_transactions = db.execute_df("""
                                         SELECT party_name as current_owner,
                                         CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, record_filed AS transaction_date
@@ -15,9 +32,10 @@ def get_building_shareholders(bbl: str):
                                          """, [bbl])
 
         if all_transactions.empty:
-            logger.warning(f"No transactions found for BBL: {bbl}")
+            logger.warning(f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n")
             return []
 
+        logger.info(f"Found {len(all_transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status.")
         latest_per_party = all_transactions.groupby(['current_owner', 'buy_or_sell'], as_index=False).transaction_date.max()
         buy = latest_per_party[latest_per_party['buy_or_sell'] == 'BUY']
         sell = latest_per_party[latest_per_party['buy_or_sell'] == 'SELL']
@@ -30,13 +48,12 @@ def get_building_shareholders(bbl: str):
 
 
         if current_shareholders.empty:
-            logger.warning(f"No owner found for BBL: {bbl}")
+            logger.warning(f"--------------------Could not determine current shareholders for BBL: {bbl} from transaction analysis--------------------\n")
             return []
 
-        return current_shareholders['current_owner'].tolist()
-    except ValueError as ve:
-        logger.error(f"ValueError in get_building_shareholders: {ve}")
-        return []
+        shareholder_list = current_shareholders['current_owner'].tolist()
+        logger.info(f"--------------------Successfully identified {len(shareholder_list)} current shareholders for BBL: {bbl}--------------------\n")
+        return shareholder_list
     except Exception as e:
-        logger.error(f"Unexpected error occurred while retrieving current owner for BBL {bbl} in get_building_shareholders: {e}")
+        logger.error(f"An unexpected error occurred while retrieving building shareholders for BBL {bbl}: {e}", exc_info=True)
         return []

@@ -1,55 +1,99 @@
+from fastapi import HTTPException
+from starlette import status
+
+from database_connector import DatabaseConnector
+from exceptions.property_search_exceptions import AddressNotFoundException, InvalidAddressException
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
-from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaint_data
+from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
 from endpoint_handlers.property_search.helper_functions.get_current_home_owner import get_current_home_owner
 from endpoint_handlers.property_search.helper_functions.get_job_filings import get_job_filings
 from endpoint_handlers.property_search.helper_functions.get_last_sold import get_last_sold
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import get_previous_home_owners
-from endpoint_handlers.property_search.helper_functions.get_violations import get_violation_data
-from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning_data
+from endpoint_handlers.property_search.helper_functions.get_violations import get_violations
+from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
-from database_connector import db
+from pydantic_models import Owners, PropertyDetailsResponse
 
-def search_by_property_address(address: str):
+
+def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyDetailsResponse:
+    """Searches for a property by its address.
+
+    Args:
+        address: The address of the property to search for.
+        db: The database connector instance.
+
+    Raises:
+        InvalidAddressException: If the address is invalid.
+        AddressNotFoundException: If the address is not found.
+        HTTPException: If an unexpected error occurs.
+
+    Returns:
+        PropertyDetailsResponse: A response object containing the property information including
+            last sold data, current and previous owners, records, job filings, violations,
+            complaints, zoning information, and coordinates.
+    """
+    if not address:
+        logger.warning("An attempt was made to search for a property without providing an address.")
+        raise InvalidAddressException
+
     try:
-        if not address:
-            logger.error("No address was provided")
-            return {"message": "No address was provided", "status_code": 400}
-
+        logger.info(f"--------------------------Starting property search for address: '{address}'--------------------------")
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid", [address.upper()])
         records_df = records_df.drop(columns=["search_prop_address"])
+        current_owner_data = []
+
+        COOP_PROPERTY_TYPES = {
+            "MULTIPLE RESIDENTIAL COOP UNIT",
+            "APARTMENT BUILDING",
+            "SINGLE RESIDENTIAL COOP UNIT"
+        }
 
         if records_df.empty:
+            logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
             parts = address.strip().split(' ', 1)
             house_number, street = parts
             records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid", [house_number, f"{street.replace(' ', '%').upper()}%"])
             if records_df.empty:
-                logger.error("No records found for %s" % address)
-                return {"message": "No records found", "status_code": 404}
+                logger.warning(f"No records found for address: '{address}' after lenient search.")
+                raise AddressNotFoundException(address)
 
+        bbl = records_df.iloc[0].bbl
+        prop_type = records_df.iloc[0].prop_type
+        logger.info(f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n")
 
-        if records_df.iloc[0].prop_type in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}:
-            current_owner_data = get_building_shareholders(records_df.iloc[0].bbl)
-            previous_owner_data = []
-        else:
-            current_owner_data = get_current_home_owner(records_df.iloc[0].bbl)
-            all_previous_data = get_previous_home_owners(records_df.iloc[0].bbl)
-            previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
+        if prop_type in COOP_PROPERTY_TYPES:
+            current_owner_data = get_building_shareholders(bbl, db)
 
-        return {
-            "last_sold": get_last_sold(records_df.iloc[0].bbl) if records_df.iloc[0].prop_type not in {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"} else [],
-            "owners": {
-                    "current_owners": current_owner_data,
-                    "previous_owners": previous_owner_data,
-                },
-                "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-                "job_filings": get_job_filings(records_df.iloc[0].bbl),
-                "violations": get_violation_data(records_df.iloc[0].bbl),
-                "complaints": get_complaint_data(address),
-                "zoning": get_zoning_data(records_df.iloc[0].bbl),
-                "coordinates": address_to_coord(address),
-                "status_code": 200,
-            }
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return {"message": "An unexpected error has occurred", "status_code": 500}
+        if len(current_owner_data) == 0:
+            current_owner_data = get_current_home_owner(bbl, db)
+
+        all_previous_data = get_previous_home_owners(bbl, db)
+        owners = Owners(
+            current_owners=current_owner_data,
+            previous_owners=[item for item in all_previous_data if item not in current_owner_data],
+        )
+
+        logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
+        
+        # Get coordinates, but don't fail if geolocation service is unavailable
+        try:
+            coordinates = address_to_coord(address)
+        except Exception as e:
+            logger.warning(f"Failed to get coordinates for address '{address}': {e}")
+            coordinates = None
+        
+        return PropertyDetailsResponse(
+            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,
+            owners=owners,
+            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            job_filings=get_job_filings(bbl, db),
+            violations=get_violations(bbl, db),
+            complaints=get_complaints(address, db),
+            zoning=get_zoning(bbl, db),
+            coordinates=coordinates
+        )
+
+    except (InvalidAddressException, AddressNotFoundException) as e:
+        logger.error(f"{type(e).__name__} occurred while searching for address '{address}': {e}")
+        raise

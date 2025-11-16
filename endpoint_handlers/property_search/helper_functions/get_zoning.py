@@ -1,45 +1,64 @@
-from database_connector import db
+from typing import Optional
+from database_connector import DatabaseConnector
+from exceptions.property_search_exceptions import InvalidBBLException
+from logger_config import logger
+from pydantic_models import Zoning
 
 
-def get_zoning_data(bbl:str):
-    try:
-        result = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
-        if result.empty:
-            return None
+def get_zoning(bbl: str, db: DatabaseConnector) -> Optional[Zoning]:
+    """Gets the zoning information for a given BBL.
 
+    Args:
+        bbl: The BBL (Borough-Block-Lot) of the property to get zoning information for.
+        db: The database connector instance.
 
-        zoning = result.iloc[0]
+    Returns:
+        A Zoning object containing the zoning information, or None if no information is found.
 
-        active_districts = [
-            district for district in [
-                zoning["Zoning District 1"],
-                zoning["Zoning District 2"],
-                zoning["Zoning District 3"],
-                zoning["Zoning District 4"]
-            ] if district
-        ]
+    Raises:
+        InvalidBBLException: If the BBL is invalid.
+    """
+    if not bbl:
+        raise InvalidBBLException
+    logger.info(f"--------------------Fetching zoning information for BBL: {bbl}--------------------")
+    result = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
+    if result.empty:
+        logger.info(f"No zoning information found for BBL: {bbl}")
+        return None
 
-        commercial_overlays = [
-            overlay for overlay in [
-                zoning["Commercial Overlay 1"],
-                zoning["Commercial Overlay 2"]
-            ] if overlay
-        ]
+    logger.info(f"Found zoning information for BBL: {bbl}")
+    zoning = result.iloc[0]
 
-        special_districts = [
-            district for district in [
-                zoning["Special District 1"],
-                zoning["Special District 2"],
-                zoning["Special District 3"]
-            ] if district
-        ]
+    active_districts = [
+        district for district in [
+            zoning.get("Zoning District 1"),
+            zoning.get("Zoning District 2"),
+            zoning.get("Zoning District 3"),
+            zoning.get("Zoning District 4")
+        ] if district
+    ]
 
-        return {
-            'zoning_districts': active_districts,
-            'commercial_overlays': commercial_overlays,
-            'special_districts': special_districts,
-            'limited_height_district': zoning["Limited Height District"]
-        }
-    except Exception as e:
-        print(f"Error retrieving zoning details for BBL {bbl}: {str(e)}")
-        raise
+    commercial_overlays = [
+        overlay for overlay in [
+            zoning.get("Commercial Overlay 1"),
+            zoning.get("Commercial Overlay 2")
+        ] if overlay
+    ]
+
+    special_districts = [
+        district for district in [
+            zoning.get("Special District 1"),
+            zoning.get("Special District 2"),
+            zoning.get("Special District 3")
+        ] if district
+    ]
+
+    zoning_data = Zoning(
+        zoning_districts=active_districts,
+        commercial_overlays=commercial_overlays,
+        special_districts=special_districts,
+        limited_height_district=zoning.get("Limited Height District", ""),
+        last_updated=""  # You may want to add this field to your database query
+    )
+    logger.info(f"--------------------Successfully processed zoning information for BBL: {bbl}--------------------\n")
+    return zoning_data

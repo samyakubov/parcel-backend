@@ -7,8 +7,8 @@ SELECT
     lot,
     ecbviolationnumber as violation_number,
     ecbviolationstatus as violation_status,
-    issuedate,
-    violationtype,
+    issuedate as issue_date,
+    violationtype as violation_type,
     respondenthousenumber as house_number,
     respondentstreet as street,
     respondentcity as city,
@@ -18,9 +18,9 @@ SELECT
     CAST(NULL as VARCHAR) as disposition_comments,
     severity,
     penalityimposed as penalty_amount,
-    amountpaid,
-    balancedue,
-    respondentname
+    amountpaid as amount_paid,
+    balancedue as balance_due,
+    respondentname as respondent_name
 FROM nycdb.main.ecb_violations
 
 UNION ALL
@@ -33,20 +33,20 @@ SELECT
     lot,
     violationnumber as violation_number,
     violationtypecode as violation_status,
-    issuedate,
-    violationtype,
+    issuedate as issue_date,
+    violationtype as violation_type,
     housenumber as house_number,
     street,
     CAST(NULL as VARCHAR) as city,
     CAST(NULL as VARCHAR) as zip,
     description,
     dispositiondate as disposition_date,
-    dispositioncomments,
+    dispositioncomments as disposition_comments,
     violationcategory as severity,
     CAST(NULL as FLOAT) as penalty_amount,
-    CAST(NULL as FLOAT) as amountpaid,
-    CAST(NULL as FLOAT) as balancedue,
-    CAST(NULL as VARCHAR) as respondentname
+    CAST(NULL as FLOAT) as amount_paid,
+    CAST(NULL as FLOAT) as balance_due,
+    CAST(NULL as VARCHAR) as respondent_name
 FROM nycdb.main.dob_violations;
 
 
