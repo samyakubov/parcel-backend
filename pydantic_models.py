@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
-from pydantic import BaseModel, field_validator
-from typing import Optional, List
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+from pydantic import BaseModel, field_validator
+
 
 @dataclass
 class APIKeyConfig:
@@ -18,16 +19,19 @@ class APIKeyConfig:
         updated_at (datetime): The timestamp when the API key was last updated.
         last_used_at (Optional[datetime]): The timestamp when the API key was last used.
     """
+
     id: int
     key: str
     name: str
     enabled: bool
     created_at: datetime
     updated_at: datetime
-    last_used_at: Optional[datetime]
+    last_used_at: datetime | None
+
 
 class CreateAPIKeyResponse(BaseModel):
     """Response model for creating a new API key."""
+
     id: int
     key: str
     name: str
@@ -37,21 +41,25 @@ class CreateAPIKeyResponse(BaseModel):
 
 class APIKeyListItem(BaseModel):
     """Response model for listing an API key."""
+
     id: int
     name: str
     enabled: bool
     created_at: str
     updated_at: str
-    last_used_at: Optional[str]
+    last_used_at: str | None
 
 
 class UpdateAPIKeyRequest(BaseModel):
     """Request model for updating an API key."""
-    name: Optional[str] = None
-    enabled: Optional[bool] = None
+
+    name: str | None = None
+    enabled: bool | None = None
+
 
 class MessageResponse(BaseModel):
     """Response model for a simple message."""
+
     message: str
 
 
@@ -62,49 +70,50 @@ class PropertyRecord(BaseModel):
     prop_borough: int
     prop_block: int
     prop_lot: int
-    prop_unit: Optional[str] = None
+    prop_unit: str | None = None
     prop_streetnumber: str
     prop_streetname: str
-    prop_partiallot: Optional[str] = None
+    prop_partiallot: str | None = None
     prop_type: str
-    party_borough: Optional[str] = None
-    partytype_desc: Optional[str] = None
+    party_borough: str | None = None
+    partytype_desc: str | None = None
     party_name: str
-    party_address1: Optional[str] = None
-    party_address2: Optional[str] = None
-    party_country: Optional[str] = None
-    party_city: Optional[str] = None
-    party_state: Optional[str] = None
-    party_zip: Optional[str] = None
-    doc_type: Optional[str] = None
+    party_address1: str | None = None
+    party_address2: str | None = None
+    party_country: str | None = None
+    party_city: str | None = None
+    party_state: str | None = None
+    party_zip: str | None = None
+    doc_type: str | None = None
     record_filed: str
 
-    @field_validator('record_filed', mode='before')
+    @field_validator("record_filed", mode="before")
     @classmethod
     def convert_timestamp(cls, v):
         """Convert pandas Timestamp to string"""
         if isinstance(v, pd.Timestamp):
-            return v.strftime('%Y-%m-%d')
+            return v.strftime("%Y-%m-%d")
         return v
 
 
 class LastSold(BaseModel):
     """Response model for a last sold message."""
+
     last_sold_price: int
     last_sold_date: str  # Changed from Timestamp to str
-    year_built: Optional[int] = None
-    land_sqft: Optional[int] = None
-    gross_sqft: Optional[int] = None
+    year_built: int | None = None
+    land_sqft: int | None = None
+    gross_sqft: int | None = None
 
-    @field_validator('last_sold_date', mode='before')
+    @field_validator("last_sold_date", mode="before")
     @classmethod
     def convert_timestamp(cls, v):
         """Convert pandas Timestamp to string"""
         if isinstance(v, pd.Timestamp):
-            return v.strftime('%Y-%m-%d')
+            return v.strftime("%Y-%m-%d")
         return v
 
-    @field_validator('year_built', 'land_sqft', 'gross_sqft', mode='before')
+    @field_validator("year_built", "land_sqft", "gross_sqft", mode="before")
     @classmethod
     def convert_numpy_int(cls, v):
         """Convert numpy int32 to Python int"""
@@ -115,8 +124,9 @@ class LastSold(BaseModel):
 
 class Owners(BaseModel):
     """Response model for listing owners."""
-    current_owners: List[str]
-    previous_owners: List[str]
+
+    current_owners: list[str]
+    previous_owners: list[str]
 
 
 class Violation(BaseModel):
@@ -125,7 +135,8 @@ class Violation(BaseModel):
 
     Attributes:
         bbl: Borough-Block-Lot identifier for the property
-        violation_status: Current status of the violation (e.g., open, closed, dismissed)
+        violation_status: Current status of the violation
+            (e.g., open, closed, dismissed)
         issue_date: Date when the violation was issued
         violation_type: Category or type of the violation
         description: Detailed description of the violation
@@ -139,6 +150,7 @@ class Violation(BaseModel):
         city: City where the property is located
         zip: ZIP code of the property
     """
+
     bbl: str
     violation_status: str
     issue_date: str
@@ -154,12 +166,12 @@ class Violation(BaseModel):
     city: str
     zip: str
 
-    @field_validator('issue_date', mode='before')
+    @field_validator("issue_date", mode="before")
     @classmethod
     def convert_timestamp(cls, v):
         """Convert pandas Timestamp to string"""
         if isinstance(v, pd.Timestamp):
-            return v.strftime('%Y-%m-%d')
+            return v.strftime("%Y-%m-%d")
         return v
 
 
@@ -178,17 +190,18 @@ class Complaint(BaseModel):
         dobrun_date: Date of Department of Buildings run or processing
         status: Current status of the complaint (e.g., pending, resolved, closed)
     """
+
     complaint_number: int
     bin: str
-    special_district: Optional[str] = None  # Made optional (was None in logs)
+    special_district: str | None = None  # Made optional (was None in logs)
     complaint_category: str
     disposition_date: str
     disposition_code: str
     inspection_date: str
-    dobrun_date: Optional[str] = None  # Made optional (was nan in logs)
+    dobrun_date: str | None = None  # Made optional (was nan in logs)
     status: str
 
-    @field_validator('dobrun_date', mode='before')
+    @field_validator("dobrun_date", mode="before")
     @classmethod
     def convert_nan(cls, v):
         """Convert NaN to None"""
@@ -204,11 +217,14 @@ class JobFiled(BaseModel):
     Attributes:
         job_description: Description of the work to be performed
         bin: Building Identification Number
-        applicant_first_name: First name of the person filing the job application
-        applicant_last_name: Last name of the person filing the job application
-        applicant_professional_title: Professional title or license type of the applicant
-            (e.g., architect, engineer, contractor)
+        applicant_first_name: First name of the person filing
+            the job application
+        applicant_last_name: Last name of the person filing
+            the job application
+        applicant_professional_title: Professional title or license type
+            of the applicant (e.g., architect, engineer, contractor)
     """
+
     job_description: str
     bin: str
     applicant_first_name: str
@@ -223,16 +239,20 @@ class Zoning(BaseModel):
     Represents zoning information for a property or area.
 
     Attributes:
-        zoning_districts: List of zoning district designations (e.g., R1, C2, M1)
-        commercial_overlays: List of commercial overlay districts that apply
+        zoning_districts: List of zoning district designations
+            (e.g., R1, C2, M1)
+        commercial_overlays: List of commercial overlay districts
+            that apply
         special_districts: List of special purpose zoning districts
-        limited_height_district: Designation for height restriction districts, if applicable
+        limited_height_district: Designation for height restriction
+            districts, if applicable
         last_updated: Date when the zoning information was last updated
     """
-    zoning_districts: List[str]
-    commercial_overlays: List[str]
-    special_districts: List[str]
-    limited_height_district: Optional[str] = None
+
+    zoning_districts: list[str]
+    commercial_overlays: list[str]
+    special_districts: list[str]
+    limited_height_district: str | None = None
     last_updated: str
 
 
@@ -244,17 +264,19 @@ class Coordinates(BaseModel):
         latitude: Latitude coordinate in decimal degrees
         longitude: Longitude coordinate in decimal degrees
     """
+
     latitude: float
     longitude: float
 
 
 class PropertyDetailsResponse(BaseModel):
     """Response model for a single property's details."""
-    last_sold: Optional[LastSold] = None
+
+    last_sold: LastSold | None = None
     owners: Owners
-    records: List[PropertyRecord]
-    job_filings: List[JobFiled]
-    violations: List[Violation]
-    complaints: List[Complaint]
-    zoning: Optional[Zoning] = None
-    coordinates: Optional[Coordinates] = None
+    records: list[PropertyRecord]
+    job_filings: list[JobFiled]
+    violations: list[Violation]
+    complaints: list[Complaint]
+    zoning: Zoning | None = None
+    coordinates: Coordinates | None = None

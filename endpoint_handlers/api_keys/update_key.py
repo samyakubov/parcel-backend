@@ -1,7 +1,7 @@
-from typing import Optional
 from database_connector import DatabaseConnector
 
-def update_key(key_id: int, db: DatabaseConnector, name: Optional[str] = None, enabled: Optional[bool] = None) -> bool:
+
+def update_key(key_id: int, db: DatabaseConnector, name: str | None = None, enabled: bool | None = None) -> bool:
     """Updates the properties of an API key.
 
     Args:
@@ -44,7 +44,7 @@ def update_key(key_id: int, db: DatabaseConnector, name: Optional[str] = None, e
     return result[0][0] > 0
 
 
-def update_last_used(api_key: str, db: DatabaseConnector):
+def update_last_used(api_key: str, db: DatabaseConnector) -> None:
     """Updates the last_used_at timestamp for an API key.
 
     This function is called when a key is successfully used for authentication.

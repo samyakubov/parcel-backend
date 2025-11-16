@@ -1,30 +1,30 @@
-from fastapi import Header, Depends
-from typing import Optional
+from fastapi import Depends, Header
 
-from database_connector import DatabaseConnector
-from database_connector import get_db
-from exceptions.api_key_exceptions import MissingApiKeyException, InvalidApiKeyException
+from database_connector import DatabaseConnector, get_db
 from endpoint_handlers.api_keys.update_key import update_last_used
+from exceptions.api_key_exceptions import InvalidApiKeyError, MissingApiKeyError
 from logger_config import logger
 
-async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key"), db: DatabaseConnector = Depends(get_db)):
+
+async def validate_api_key(
+    x_api_key: str | None = Header(None, alias="X-API-Key"), db: DatabaseConnector = Depends(get_db)
+) -> None:
     """FastAPI dependency that validates an API key from the X-API-Key header.
 
     Args:
-        x_api_key (Optional[str], optional): The API key from the X-API-Key header. 
+        x_api_key (Optional[str], optional): The API key from the X-API-Key header.
             Defaults to Header(None, alias="X-API-Key").
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
-        MissingApiKeyException: If the API key is missing.
-        InvalidApiKeyException: If the API key is invalid or disabled.
+        MissingApiKeyError: If the API key is missing.
+        InvalidApiKeyError: If the API key is invalid or disabled.
     """
 
     # Check if API key is provided
     if not x_api_key:
         logger.error("Authentication failed: Missing API key")
-        raise MissingApiKeyException
-
+        raise MissingApiKeyError
 
     query = """
             SELECT id, key, name, enabled, created_at, updated_at, last_used_at
@@ -38,9 +38,9 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
     if not is_valid_key:
         # Log authentication failure with partial key (first 8 chars)
         logger.error(f"Authentication failed: Invalid API key ({partial_key}...)")
-        raise InvalidApiKeyException
+        raise InvalidApiKeyError
 
     # Update last_used_at timestamp
     update_last_used(x_api_key, db=db)
 
-    logger.info(f"Authentication successful with given Key")
+    logger.info("Authentication successful with given Key")

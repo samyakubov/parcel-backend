@@ -1,0 +1,24 @@
+# Ruff configuration
+line-length = 120
+
+[lint]
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+
+# Ignore specific rules if needed
+ignore = [
+    "B008",  # Allow function calls in argument defaults (FastAPI Depends pattern)
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Ignore unused imports in __init__.py files
+"endpoint_handlers/**/*.py" = ["E501"]  # Allow longer lines in endpoint handlers (SQL queries)
+"endpoints/**/*.py" = ["E501"]  # Allow longer lines in endpoints (decorators)

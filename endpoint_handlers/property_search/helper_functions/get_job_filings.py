@@ -1,10 +1,9 @@
-from typing import List
 from database_connector import DatabaseConnector
 from logger_config import logger
 from pydantic_models import JobFiled
 
 
-def get_job_filings(bbl:str, db: DatabaseConnector)-> List[JobFiled]:
+def get_job_filings(bbl: str, db: DatabaseConnector) -> list[JobFiled]:
     """Gets job filings for a given BBL.
 
     Args:
@@ -20,8 +19,9 @@ def get_job_filings(bbl:str, db: DatabaseConnector)-> List[JobFiled]:
         return []
     try:
         logger.info(f"--------------------Fetching job filings for BBL: {bbl}--------------------")
-        job_filings_df = db.execute_df("""SELECT 
-                                                jobdescription as job_description, 
+        job_filings_df = db.execute_df(
+            """SELECT
+                                                jobdescription as job_description,
                                                 bin as bin,
                                                 jobstatus as job_status,
                                                 jobtype as job_type,
@@ -29,12 +29,13 @@ def get_job_filings(bbl:str, db: DatabaseConnector)-> List[JobFiled]:
                                                 ApplicantsLastName as applicant_last_name,
                                                 ApplicantProfessionalTitle as applicant_professional_title
                                           FROM dobjobs WHERE bbl = ?""",
-                                       [bbl])
+            [bbl],
+        )
 
         if job_filings_df.empty:
             logger.info(f"--------------------No job filings found for BBL: {bbl}--------------------\n")
             return []
-        
+
         logger.info(f"--------------------Found {len(job_filings_df)} job filings for BBL: {bbl}--------------------\n")
         return job_filings_df.to_dict(orient="records")
     except Exception as e:

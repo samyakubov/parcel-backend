@@ -1,41 +1,53 @@
 import os
-from fastapi import APIRouter, Header, Depends
-from database_connector import DatabaseConnector
-from database_connector import get_db
+
+from fastapi import APIRouter, Depends, Header
+
+from database_connector import DatabaseConnector, get_db
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
-from exceptions.api_key_exceptions import MissingAdminKeyException, InvalidAdminKeyException, FailedToDeleteApiKeyException, InvalidUpdateException, APIKeyNotFoundException
 from endpoint_handlers.api_keys.list_all_keys import list_all_keys
 from endpoint_handlers.api_keys.update_key import update_key
+from exceptions.api_key_exceptions import (
+    APIKeyNotFoundError,
+    FailedToDeleteApiKeyError,
+    InvalidAdminKeyError,
+    InvalidUpdateError,
+    MissingAdminKeyError,
+)
 from logger_config import logger
-from pydantic_models import CreateAPIKeyResponse, APIKeyListItem, MessageResponse, UpdateAPIKeyRequest
+from pydantic_models import (
+    APIKeyListItem,
+    CreateAPIKeyResponse,
+    MessageResponse,
+    UpdateAPIKeyRequest,
+)
 
 api_key_routes = APIRouter(prefix="/api-keys")
 
 
-def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
+def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> None:
     """Verifies the request is using the admin API key.
 
     Args:
-        api_key (str, optional): The API key from the "X-API-Key" header. 
+        api_key (str, optional): The API key from the "X-API-Key" header.
             Defaults to Header(..., alias="X-API-Key").
 
     Raises:
-        MissingAdminKeyException: If the admin key is not configured.
-        InvalidAdminKeyException: If the provided API key is invalid.
+        MissingAdminKeyError: If the admin key is not configured.
+        InvalidAdminKeyError: If the provided API key is invalid.
     """
     admin_key = os.getenv("ADMIN_API_KEY")
 
     if not admin_key:
         logger.error("Admin key not configured")
-        raise MissingAdminKeyException
+        raise MissingAdminKeyError
 
     if api_key != admin_key:
-        raise InvalidAdminKeyException
+        raise InvalidAdminKeyError
 
 
 @api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
-def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
+def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
     """Creates a new API key.
 
     Args:
@@ -43,7 +55,7 @@ def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
-        FailedToCreateApiKeyException: If the API key could not be created.
+        FailedToCreateApiKeyError: If the API key could not be created.
 
     Returns:
         CreateAPIKeyResponse: The new API key details.
@@ -55,12 +67,12 @@ def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
         key=key_config.key,
         name=key_config.name,
         enabled=key_config.enabled,
-        created_at=key_config.created_at.isoformat()
+        created_at=key_config.created_at.isoformat(),
     )
 
 
 @api_key_routes.get("/list-keys", response_model=list[APIKeyListItem], dependencies=[Depends(verify_admin_key)])
-def list_api_keys(db: DatabaseConnector = Depends(get_db)):
+def list_api_keys(db: DatabaseConnector = Depends(get_db)) -> list[APIKeyListItem]:
     """Lists all API keys without exposing the actual key values.
 
     Args:
@@ -78,14 +90,16 @@ def list_api_keys(db: DatabaseConnector = Depends(get_db)):
             enabled=key.enabled,
             created_at=key.created_at.isoformat(),
             updated_at=key.updated_at.isoformat(),
-            last_used_at=key.last_used_at.isoformat() if key.last_used_at else None
+            last_used_at=key.last_used_at.isoformat() if key.last_used_at else None,
         )
         for key in keys
     ]
 
 
-@api_key_routes.delete("/delete-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
+@api_key_routes.delete(
+    "/delete-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)]
+)
+def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)) -> MessageResponse:
     """Deletes an API key by ID.
 
     Args:
@@ -93,7 +107,7 @@ def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
-        FailedToDeleteApiKeyException: If the API key could not be deleted.
+        FailedToDeleteApiKeyError: If the API key could not be deleted.
 
     Returns:
         MessageResponse: A message indicating the result of the deletion.
@@ -101,13 +115,17 @@ def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
     success = delete_key(int(key_id), db=db)
 
     if not success:
-        raise FailedToDeleteApiKeyException
+        raise FailedToDeleteApiKeyError
 
     return MessageResponse(message="API key deleted successfully")
 
 
-@api_key_routes.patch("/update-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)):
+@api_key_routes.patch(
+    "/update-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)]
+)
+def update_api_key(
+    key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)
+) -> MessageResponse:
     """Updates API key properties (name and/or enabled status).
 
     Args:
@@ -116,23 +134,18 @@ def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnec
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
-        InvalidUpdateException: If the request is invalid.
-        APIKeyNotFoundException: If the API key is not found.
+        InvalidUpdateError: If the request is invalid.
+        APIKeyNotFoundError: If the API key is not found.
 
     Returns:
         MessageResponse: A message indicating the result of the update.
     """
     if request.name is None and request.enabled is None:
-        raise InvalidUpdateException
+        raise InvalidUpdateError
 
-    success = update_key(
-        key_id=key_id,
-        db=db,
-        name=request.name,
-        enabled=request.enabled
-    )
+    success = update_key(key_id=key_id, db=db, name=request.name, enabled=request.enabled)
 
     if not success:
-        raise APIKeyNotFoundException
+        raise APIKeyNotFoundError
 
     return MessageResponse(message="API key updated successfully")

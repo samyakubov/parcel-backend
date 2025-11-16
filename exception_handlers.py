@@ -1,19 +1,35 @@
 import logging
-from fastapi import Request, HTTPException
+
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette import status
-from exceptions.api_key_exceptions import MissingApiKeyException, InvalidApiKeyException, InvalidAdminKeyException, \
-    APIKeyNotFoundException, InvalidUpdateException, MissingAdminKeyException, FailedToCreateApiKeyException, \
-    FailedToDeleteApiKeyException
-from exceptions.property_search_exceptions import InvalidBBLException, BBLNotFoundException, InvalidAddressException, \
-    AddressNotFoundException
-from exceptions.geolocation_exceptions import GeolocationException, AddressNotInNewYorkException
+
 from database_connector import DatabaseError
+from exceptions.api_key_exceptions import (
+    APIKeyNotFoundError,
+    FailedToCreateApiKeyError,
+    FailedToDeleteApiKeyError,
+    InvalidAdminKeyError,
+    InvalidApiKeyError,
+    InvalidUpdateError,
+    MissingAdminKeyError,
+    MissingApiKeyError,
+)
+from exceptions.geolocation_exceptions import (
+    AddressNotInNewYorkError,
+    GeolocationError,
+)
+from exceptions.property_search_exceptions import (
+    AddressNotFoundError,
+    BBLNotFoundError,
+    InvalidAddressError,
+    InvalidBBLError,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def register_exception_handlers(app):
+def register_exception_handlers(app) -> None:
     """Registers exception handlers for the FastAPI application.
 
     Args:
@@ -21,7 +37,7 @@ def register_exception_handlers(app):
     """
 
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         """Handles any unhandled exceptions.
 
         Args:
@@ -33,12 +49,11 @@ def register_exception_handlers(app):
         """
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": "An unexpected error occurred."}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": "An unexpected error occurred."}
         )
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, exc: HTTPException):
+    async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
         """Handles HTTPExceptions.
 
         Args:
@@ -49,217 +64,178 @@ def register_exception_handlers(app):
             JSONResponse: A JSON response with the exception's status code and a generic error message.
         """
         logger.warning(f"HTTPException: {exc.detail}")
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"message": exc.detail}
-        )
+        return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
 
-    @app.exception_handler(InvalidBBLException)
-    async def invalid_bbl_handler(request: Request, exc: InvalidBBLException):
-        """Handles InvalidBBLExceptions.
+    @app.exception_handler(InvalidBBLError)
+    async def invalid_bbl_handler(request: Request, exc: InvalidBBLError) -> JSONResponse:
+        """Handles InvalidBBLErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (InvalidBBLException): The InvalidBBLException that was raised.
+            exc (InvalidBBLError): The InvalidBBLError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 400 status code and the exception's message.
         """
         logger.warning(f"Invalid BBL: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"message": str(exc)})
 
-    @app.exception_handler(BBLNotFoundException)
-    async def bbl_not_found_handler(request: Request, exc: BBLNotFoundException):
-        """Handles BBLNotFoundExceptions.
+    @app.exception_handler(BBLNotFoundError)
+    async def bbl_not_found_handler(request: Request, exc: BBLNotFoundError) -> JSONResponse:
+        """Handles BBLNotFoundErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (BBLNotFoundException): The BBLNotFoundException that was raised.
+            exc (BBLNotFoundError): The BBLNotFoundError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 404 status code and the exception's message.
         """
         logger.warning(f"BBL not found: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": str(exc)})
 
-    @app.exception_handler(InvalidAddressException)
-    async def invalid_address_handler(request: Request, exc: InvalidAddressException):
-        """Handles InvalidAddressExceptions.
+    @app.exception_handler(InvalidAddressError)
+    async def invalid_address_handler(request: Request, exc: InvalidAddressError) -> JSONResponse:
+        """Handles InvalidAddressErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (InvalidAddressException): The InvalidAddressException that was raised.
+            exc (InvalidAddressError): The InvalidAddressError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 400 status code and the exception's message.
         """
         logger.warning(f"Invalid address: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"message": str(exc)})
 
-    @app.exception_handler(AddressNotFoundException)
-    async def address_not_found_handler(request: Request, exc: AddressNotFoundException):
-        """Handles AddressNotFoundExceptions.
+    @app.exception_handler(AddressNotFoundError)
+    async def address_not_found_handler(request: Request, exc: AddressNotFoundError) -> JSONResponse:
+        """Handles AddressNotFoundErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (AddressNotFoundException): The AddressNotFoundException that was raised.
+            exc (AddressNotFoundError): The AddressNotFoundError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 404 status code and the exception's message.
         """
         logger.warning(f"Address not found: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": str(exc)})
 
-    @app.exception_handler(MissingApiKeyException)
-    async def missing_api_key_handler(request: Request, exc: MissingApiKeyException):
-        """Handles MissingApiKeyExceptions.
+    @app.exception_handler(MissingApiKeyError)
+    async def missing_api_key_handler(request: Request, exc: MissingApiKeyError) -> JSONResponse:
+        """Handles MissingApiKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (MissingApiKeyException): The MissingApiKeyException that was raised.
+            exc (MissingApiKeyError): The MissingApiKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 401 status code and the exception's message.
         """
         logger.warning(f"Missing API key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"message": str(exc)})
 
-    @app.exception_handler(InvalidApiKeyException)
-    async def invalid_api_key_handler(request: Request, exc: InvalidApiKeyException):
-        """Handles InvalidApiKeyExceptions.
+    @app.exception_handler(InvalidApiKeyError)
+    async def invalid_api_key_handler(request: Request, exc: InvalidApiKeyError) -> JSONResponse:
+        """Handles InvalidApiKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (InvalidApiKeyException): The InvalidApiKeyException that was raised.
+            exc (InvalidApiKeyError): The InvalidApiKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 401 status code and the exception's message.
         """
         logger.warning(f"Invalid API key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"message": str(exc)})
 
-    @app.exception_handler(InvalidAdminKeyException)
-    async def invalid_admin_key_handler(request: Request, exc: InvalidAdminKeyException):
-        """Handles InvalidAdminKeyExceptions.
+    @app.exception_handler(InvalidAdminKeyError)
+    async def invalid_admin_key_handler(request: Request, exc: InvalidAdminKeyError) -> JSONResponse:
+        """Handles InvalidAdminKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (InvalidAdminKeyException): The InvalidAdminKeyException that was raised.
+            exc (InvalidAdminKeyError): The InvalidAdminKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 403 status code and the exception's message.
         """
         logger.warning(f"Invalid admin key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"message": str(exc)})
 
-    @app.exception_handler(APIKeyNotFoundException)
-    async def api_key_not_found_handler(request: Request, exc: APIKeyNotFoundException):
-        """Handles APIKeyNotFoundExceptions.
+    @app.exception_handler(APIKeyNotFoundError)
+    async def api_key_not_found_handler(request: Request, exc: APIKeyNotFoundError) -> JSONResponse:
+        """Handles APIKeyNotFoundErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (APIKeyNotFoundException): The APIKeyNotFoundException that was raised.
+            exc (APIKeyNotFoundError): The APIKeyNotFoundError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 404 status code and the exception's message.
         """
         logger.warning(f"API key not found: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": str(exc)})
 
-    @app.exception_handler(InvalidUpdateException)
-    async def invalid_update_handler(request: Request, exc: InvalidUpdateException):
-        """Handles InvalidUpdateExceptions.
+    @app.exception_handler(InvalidUpdateError)
+    async def invalid_update_handler(request: Request, exc: InvalidUpdateError) -> JSONResponse:
+        """Handles InvalidUpdateErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (InvalidUpdateException): The InvalidUpdateException that was raised.
+            exc (InvalidUpdateError): The InvalidUpdateError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 400 status code and the exception's message.
         """
         logger.warning(f"Invalid update request: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"message": str(exc)})
 
-    @app.exception_handler(MissingAdminKeyException)
-    async def missing_admin_key_handler(request: Request, exc: MissingAdminKeyException):
-        """Handles MissingAdminKeyExceptions.
+    @app.exception_handler(MissingAdminKeyError)
+    async def missing_admin_key_handler(request: Request, exc: MissingAdminKeyError) -> JSONResponse:
+        """Handles MissingAdminKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (MissingAdminKeyException): The MissingAdminKeyException that was raised.
+            exc (MissingAdminKeyError): The MissingAdminKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 500 status code and the exception's message.
         """
         logger.error(f"Missing admin key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": str(exc)})
 
-    @app.exception_handler(FailedToCreateApiKeyException)
-    async def failed_to_create_api_key_handler(request: Request, exc: FailedToCreateApiKeyException):
-        """Handles FailedToCreateApiKeyExceptions.
+    @app.exception_handler(FailedToCreateApiKeyError)
+    async def failed_to_create_api_key_handler(request: Request, exc: FailedToCreateApiKeyError) -> JSONResponse:
+        """Handles FailedToCreateApiKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (FailedToCreateApiKeyException): The FailedToCreateApiKeyException that was raised.
+            exc (FailedToCreateApiKeyError): The FailedToCreateApiKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 500 status code and the exception's message.
         """
         logger.error(f"Failed to create API key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": str(exc)})
 
-    @app.exception_handler(FailedToDeleteApiKeyException)
-    async def failed_to_delete_api_key_handler(request: Request, exc: FailedToDeleteApiKeyException):
-        """Handles FailedToDeleteApiKeyExceptions.
+    @app.exception_handler(FailedToDeleteApiKeyError)
+    async def failed_to_delete_api_key_handler(request: Request, exc: FailedToDeleteApiKeyError) -> JSONResponse:
+        """Handles FailedToDeleteApiKeyErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (FailedToDeleteApiKeyException): The FailedToDeleteApiKeyException that was raised.
+            exc (FailedToDeleteApiKeyError): The FailedToDeleteApiKeyError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 500 status code and the exception's message.
         """
         logger.error(f"Failed to delete API key: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": str(exc)})
 
     @app.exception_handler(DatabaseError)
-    async def database_error_handler(request: Request, exc: DatabaseError):
+    async def database_error_handler(request: Request, exc: DatabaseError) -> JSONResponse:
         """Handles DatabaseErrors.
 
         Args:
@@ -271,40 +247,33 @@ def register_exception_handlers(app):
         """
         logger.error(f"Database error: {exc}", exc_info=True)
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"message": "A database error occurred"}
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"message": "A database error occurred"}
         )
 
-    @app.exception_handler(GeolocationException)
-    async def geolocation_error_handler(request: Request, exc: GeolocationException):
-        """Handles GeolocationExceptions.
+    @app.exception_handler(GeolocationError)
+    async def geolocation_error_handler(request: Request, exc: GeolocationError) -> JSONResponse:
+        """Handles GeolocationErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (GeolocationException): The GeolocationException that was raised.
+            exc (GeolocationError): The GeolocationError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 503 status code and the exception's message.
         """
         logger.error(f"Geolocation error: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, content={"message": str(exc)})
 
-    @app.exception_handler(AddressNotInNewYorkException)
-    async def address_not_in_ny_handler(request: Request, exc: AddressNotInNewYorkException):
-        """Handles AddressNotInNewYorkExceptions.
+    @app.exception_handler(AddressNotInNewYorkError)
+    async def address_not_in_ny_handler(request: Request, exc: AddressNotInNewYorkError) -> JSONResponse:
+        """Handles AddressNotInNewYorkErrors.
 
         Args:
             request (Request): The incoming request.
-            exc (AddressNotInNewYorkException): The AddressNotInNewYorkException that was raised.
+            exc (AddressNotInNewYorkError): The AddressNotInNewYorkError that was raised.
 
         Returns:
             JSONResponse: A JSON response with a 400 status code and the exception's message.
         """
         logger.warning(f"Address not in New York: {exc}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"message": str(exc)})

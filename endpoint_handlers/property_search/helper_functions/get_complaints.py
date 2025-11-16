@@ -1,12 +1,14 @@
-from typing import List
 import pandas as pd
+
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
+from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import (
+    standardize_address,
+)
 from logger_config import logger
 from pydantic_models import Complaint
 
 
-def get_complaints(address: str, db: DatabaseConnector) -> List[Complaint]:
+def get_complaints(address: str, db: DatabaseConnector) -> list[Complaint]:
     """Gets complaints for a given address.
 
     Args:
@@ -24,7 +26,7 @@ def get_complaints(address: str, db: DatabaseConnector) -> List[Complaint]:
     try:
         logger.info(f"--------------------Fetching complaints for address: '{address}'--------------------")
         standardized_addr = standardize_address(address)
-        parts = standardized_addr.strip().split(' ', 1)
+        parts = standardized_addr.strip().split(" ", 1)
         if len(parts) != 2:
             logger.warning(f"Could not parse standardized address '{standardized_addr}' into house number and street.")
             return []
@@ -33,7 +35,8 @@ def get_complaints(address: str, db: DatabaseConnector) -> List[Complaint]:
         street = street.strip().upper()
 
         logger.info(f"Searching for complaints for house number '{house_number}' and street '{street}'.")
-        df = db.execute_df("""SELECT
+        df = db.execute_df(
+            """SELECT
                                   complaintnumber as complaint_number,
                                   dateentered as date_entered,
                                   status as status,
@@ -48,19 +51,22 @@ def get_complaints(address: str, db: DatabaseConnector) -> List[Complaint]:
                               WHERE housenumber = ?
                                 AND housestreet LIKE ?
                               ORDER BY dateentered DESC""",
-                           [str(house_number), f"{street}%"])
+            [str(house_number), f"{street}%"],
+        )
         if df.empty:
             logger.info(f"No complaints found for address: '{address}'.")
             return []
 
-        date_columns = ['date_entered', 'disposition_date', 'inspection_date', 'dobrun_date']
+        date_columns = ["date_entered", "disposition_date", "inspection_date", "dobrun_date"]
         for col in date_columns:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
+                df[col] = pd.to_datetime(df[col], errors="coerce").dt.strftime("%Y-%m-%d")
 
-        df = df.sort_values('date_entered', ascending=False)
+        df = df.sort_values("date_entered", ascending=False)
         logger.info(f"--------------------Found {len(df)} complaints for address: '{address}'--------------------\n")
         return df.to_dict(orient="records")
     except Exception as e:
-        logger.error(f"An unexpected error occurred while retrieving complaints for address '{address}': {e}", exc_info=True)
+        logger.error(
+            f"An unexpected error occurred while retrieving complaints for address '{address}': {e}", exc_info=True
+        )
         return []
