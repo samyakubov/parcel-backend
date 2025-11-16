@@ -3,6 +3,7 @@ from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 import ssl
 import certifi
 from logger_config import logger
+from pydantic_models import Coordinates
 
 
 def address_to_coord(address: str):
@@ -32,10 +33,7 @@ def address_to_coord(address: str):
 
         if location:
             logger.info(f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})")
-            return {
-                "latitude": location.latitude,
-                "longitude": location.longitude
-            }
+            return Coordinates(latitude=location.latitude, longitude=location.longitude)
         else:
             logger.warning(f"Could not find location for address: '{address}'")
             return None

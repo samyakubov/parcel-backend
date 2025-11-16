@@ -1,15 +1,18 @@
+from typing import Optional
 from database_connector import db
 from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
+from pydantic_models import Zoning
 
-def get_zoning(bbl:str):
+
+def get_zoning(bbl: str) -> Optional[Zoning]:
     """Gets the zoning information for a given BBL.
 
     Args:
-        bbl (str): The BBL of the property to get zoning information for.
+        bbl: The BBL (Borough-Block-Lot) of the property to get zoning information for.
 
     Returns:
-        dict: A dictionary containing the zoning information, or None if no information is found.
+        A Zoning object containing the zoning information, or None if no information is found.
 
     Raises:
         InvalidBBLException: If the BBL is invalid.
@@ -49,13 +52,14 @@ def get_zoning(bbl:str):
                 zoning.get("Special District 3")
             ] if district
         ]
-        
-        zoning_data = {
-            'zoning_districts': active_districts,
-            'commercial_overlays': commercial_overlays,
-            'special_districts': special_districts,
-            'limited_height_district': zoning.get("Limited Height District")
-        }
+
+        zoning_data = Zoning(
+            zoning_districts=active_districts,
+            commercial_overlays=commercial_overlays,
+            special_districts=special_districts,
+            limited_height_district=zoning.get("Limited Height District", ""),
+            last_updated=""  # You may want to add this field to your database query
+        )
         logger.info(f"--------------------Successfully processed zoning information for BBL: {bbl}--------------------\n")
         return zoning_data
 

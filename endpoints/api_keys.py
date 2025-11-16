@@ -1,7 +1,5 @@
 import os
-from typing import Optional
 from fastapi import APIRouter, Header, HTTPException, Depends
-from pydantic import BaseModel
 from starlette import status
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
@@ -9,36 +7,7 @@ from endpoint_handlers.api_keys.exceptions import MissingAdminKeyException, Inva
 from endpoint_handlers.api_keys.list_all_keys import list_all_keys
 from endpoint_handlers.api_keys.update_key import update_key
 from logger_config import logger
-
-
-class CreateAPIKeyResponse(BaseModel):
-    """Response model for creating a new API key."""
-    id: int
-    key: str
-    name: str
-    enabled: bool
-    created_at: str
-
-
-class APIKeyListItem(BaseModel):
-    """Response model for listing an API key."""
-    id: int
-    name: str
-    enabled: bool
-    created_at: str
-    updated_at: str
-    last_used_at: Optional[str]
-
-
-class UpdateAPIKeyRequest(BaseModel):
-    """Request model for updating an API key."""
-    name: Optional[str] = None
-    enabled: Optional[bool] = None
-
-
-class MessageResponse(BaseModel):
-    """Response model for a simple message."""
-    message: str
+from pydantic_models import CreateAPIKeyResponse, APIKeyListItem, MessageResponse, UpdateAPIKeyRequest
 
 api_key_routes = APIRouter(prefix="/api-keys")
 

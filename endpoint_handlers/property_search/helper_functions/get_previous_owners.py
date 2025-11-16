@@ -5,7 +5,7 @@ from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
 def get_previous_home_owners(bbl:str):
-    """Gets the previous home owners for a given BBL.
+    """Gets the previous homeowners for a given BBL.
 
     This function first tries to find the owners from deed documents.
     If no owners are found, it then tries to find the owners from the latest mortgage document.

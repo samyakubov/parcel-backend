@@ -1,18 +1,20 @@
+from typing import List
 import pandas as pd
 from database_connector import db
 from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
+from pydantic_models import Complaint
 
 
-def get_complaints(address: str):
+def get_complaints(address: str) -> List[Complaint]:
     """Gets complaints for a given address.
 
     Args:
-        address (str): The address to get complaints for.
+        address: The address to get complaints for.
 
     Returns:
-        list: A list of dictionaries, where each dictionary is a complaint.
-            Returns an empty list if no complaints are found or if an error occurs.
+        A list of Complaint objects containing complaint information.
+        Returns an empty list if no complaints are found or if an error occurs.
     """
     if not address:
         logger.warning("An attempt was made to get complaints without providing an address.")
@@ -28,22 +30,22 @@ def get_complaints(address: str):
 
         house_number, street = parts
         street = street.strip().upper()
-        
+
         logger.info(f"Searching for complaints for house number '{house_number}' and street '{street}'.")
-        df = db.execute_df("""SELECT 
-                                complaintnumber as complaint_number,
-                                dateentered as date_entered,
-                                status as status,
-                                specialdistrict as special_district,
-                                complaintcategory as complaint_category,
-                                dispositiondate as disposition_date,
-                                dispositioncode as disposition_code,
-                                inspectiondate as inspection_date,
-                                dobrundate as dobrun_date,
-                                bin as bin
-                              FROM dob_complaints 
-                              WHERE housenumber = ? 
-                                AND housestreet LIKE ? 
+        df = db.execute_df("""SELECT
+                                  complaintnumber as complaint_number,
+                                  dateentered as date_entered,
+                                  status as status,
+                                  specialdistrict as special_district,
+                                  complaintcategory as complaint_category,
+                                  dispositiondate as disposition_date,
+                                  dispositioncode as disposition_code,
+                                  inspectiondate as inspection_date,
+                                  dobrundate as dobrun_date,
+                                  bin as bin
+                              FROM dob_complaints
+                              WHERE housenumber = ?
+                                AND housestreet LIKE ?
                               ORDER BY dateentered DESC""",
                            [str(house_number), f"{street}%"])
         if df.empty:

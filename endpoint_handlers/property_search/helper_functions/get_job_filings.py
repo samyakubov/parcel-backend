@@ -1,8 +1,10 @@
+from typing import List
 from database_connector import db
 from logger_config import logger
+from pydantic_models import JobFiled
 
 
-def get_job_filings(bbl:str):
+def get_job_filings(bbl:str)-> List[JobFiled]:
     """Gets job filings for a given BBL.
 
     Args:

@@ -12,12 +12,14 @@ from endpoint_handlers.property_search.helper_functions.get_zoning import get_zo
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
 from database_connector import db
+from pydantic_models import Owners, PropertyDetailsResponse
 
-def search_by_property_address(address: str):
+
+def search_by_property_address(address: str) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
-        address (str): The address of the property to search for.
+        address: The address of the property to search for.
 
     Raises:
         InvalidAddressException: If the address is invalid.
@@ -25,7 +27,9 @@ def search_by_property_address(address: str):
         HTTPException: If an unexpected error occurs.
 
     Returns:
-        dict: A dictionary containing the property information.
+        PropertyDetailsResponse: A response object containing the property information including
+            last sold data, current and previous owners, records, job filings, violations,
+            complaints, zoning information, and coordinates.
     """
     if not address:
         logger.warning("An attempt was made to search for a property without providing an address.")
@@ -63,24 +67,22 @@ def search_by_property_address(address: str):
             current_owner_data = get_current_home_owner(bbl)
 
         all_previous_data = get_previous_home_owners(bbl)
-        previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
+        owners = Owners(
+            current_owners=current_owner_data,
+            previous_owners=[item for item in all_previous_data if item not in current_owner_data],
+        )
 
-        response_data = {
-            "last_sold": get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else [],
-            "owners": {
-                "current_owners": current_owner_data,
-                "previous_owners": previous_owner_data,
-            },
-            "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            "job_filings": get_job_filings(bbl),
-            "violations": get_violations(bbl),
-            "complaints": get_complaints(address),
-            "zoning": get_zoning(bbl),
-            "coordinates": address_to_coord(address),
-            "status_code": 200,
-        }
         logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
-        return response_data
+        return PropertyDetailsResponse(
+            last_sold=get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            owners=owners,
+            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            job_filings=get_job_filings(bbl),
+            violations=get_violations(bbl),
+            complaints=get_complaints(address),
+            zoning=get_zoning(bbl),
+            coordinates=address_to_coord(address)
+        )
 
     except (InvalidAddressException, AddressNotFoundException) as e:
         logger.error(f"{type(e).__name__} occurred while searching for address '{address}': {e}")

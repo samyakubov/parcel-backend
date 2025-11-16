@@ -13,6 +13,7 @@ from endpoint_handlers.property_search.helper_functions.get_violations import ge
 from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
 from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
+from pydantic_models import Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
 
 
@@ -63,25 +64,21 @@ def search_by_property_bbl(bbl: str):
             current_owner_data = get_current_home_owner(bbl)
 
         all_previous_data = get_previous_home_owners(bbl)
-        previous_owner_data = [item for item in all_previous_data if item not in current_owner_data]
-        logger.info(f"Found {len(current_owner_data)} current owner(s) and {len(previous_owner_data)} previous owner(s) for BBL {bbl}.")
 
-        response_data = {
-            "last_sold": get_last_sold(bbl) if records_df.iloc[0].prop_type not in COOP_PROPERTY_TYPES else [],
-            "owners": {
-                "current_owners": current_owner_data,
-                "previous_owners": previous_owner_data,
-            },
-            "records": records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            "job_filings": get_job_filings(bbl),
-            "violations": get_violations(bbl),
-            "complaints": get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname),
-            "coordinates": address_to_coord(add_ordinal_to_street_number(standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower()))),
-            "zoning": get_zoning(bbl),
-            "status_code": 200,
-        }
-        logger.info(f"Successfully compiled all data for BBL: '{bbl}'.")
-        return response_data
+        owners = Owners(
+            current_owners=current_owner_data,
+            previous_owners=[item for item in all_previous_data if item not in current_owner_data],
+        )
+        return PropertyDetailsResponse(
+            last_sold=get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            owners=owners,
+            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            job_filings=get_job_filings(bbl),
+            violations=get_violations(bbl),
+            complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname),
+            zoning=get_zoning(bbl),
+            coordinates= address_to_coord(add_ordinal_to_street_number(standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower())))
+        )
     except (InvalidBBLException, BBLNotFoundException) as e:
         logger.warning(f"{type(e).__name__} occurred while searching for BBL '{bbl}': {e}")
         raise
