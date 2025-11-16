@@ -1,11 +1,14 @@
+from collections.abc import Generator
+
 import duckdb
 import pandas as pd
-from typing import Generator
+
 from logger_config import logger
 
 
 class DatabaseError(Exception):
     """Exception raised for database-related errors."""
+
     pass
 
 
@@ -16,7 +19,7 @@ class DatabaseConnector:
         """Initializes the DatabaseConnector.
 
         Args:
-            db_path (str, optional): The path to the DuckDB database file. 
+            db_path (str, optional): The path to the DuckDB database file.
                 Defaults to ":memory:", which creates an in-memory database.
         """
         self.db_path = db_path
@@ -27,7 +30,7 @@ class DatabaseConnector:
 
         Returns:
             duckdb.DuckDBPyConnection: A connection object to the database.
-            
+
         Raises:
             DatabaseError: If the connection fails.
         """
@@ -40,12 +43,12 @@ class DatabaseConnector:
 
         Args:
             query (str): The SQL query to execute.
-            params (list, optional): A list of parameters to substitute into the query. 
+            params (list, optional): A list of parameters to substitute into the query.
                 Defaults to None.
 
         Returns:
             list: A list of tuples representing the query results.
-            
+
         Raises:
             DatabaseError: If the query execution fails.
         """
@@ -70,7 +73,7 @@ class DatabaseConnector:
 
         Returns:
             pandas.DataFrame: A DataFrame containing the query results.
-            
+
         Raises:
             DatabaseError: If the query execution fails.
         """
@@ -90,7 +93,6 @@ class DatabaseConnector:
         if self.conn:
             self.conn.close()
             self.conn = None
-
 
 
 def get_db() -> Generator[DatabaseConnector, None, None]:

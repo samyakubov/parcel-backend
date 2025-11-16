@@ -1,7 +1,7 @@
-from typing import Optional
 from database_connector import DatabaseConnector
 
-def update_key(key_id: int, db: DatabaseConnector, name: Optional[str] = None, enabled: Optional[bool] = None) -> bool:
+
+def update_key(key_id: int, db: DatabaseConnector, name: str | None = None, enabled: bool | None = None) -> bool:
     """Updates the properties of an API key.
 
     Args:

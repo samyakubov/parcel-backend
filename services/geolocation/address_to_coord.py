@@ -1,14 +1,15 @@
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 import ssl
+
 import certifi
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut
+from geopy.geocoders import Nominatim
+
+from exceptions.geolocation_exceptions import GeolocationError
 from logger_config import logger
 from pydantic_models import Coordinates
-from typing import Optional
-from exceptions.geolocation_exceptions import GeolocationException
 
 
-def address_to_coord(address: str) -> Optional[Coordinates]:
+def address_to_coord(address: str) -> Coordinates | None:
     """
     Convert a street address into geographic coordinates.
 
@@ -16,10 +17,11 @@ def address_to_coord(address: str) -> Optional[Coordinates]:
         address (str): The address to lookup.
 
     Returns:
-        Coordinates | None: A Coordinates object with latitude and longitude, or None if lookup fails.
-        
+        Coordinates | None: A Coordinates object with latitude and longitude,
+            or None if lookup fails.
+
     Raises:
-        GeolocationException: If the geocoding service fails.
+        GeolocationError: If the geocoding service fails.
     """
     if not address:
         logger.warning("No address was provided for geocoding.")
@@ -27,28 +29,25 @@ def address_to_coord(address: str) -> Optional[Coordinates]:
     try:
         ctx = ssl.create_default_context(cafile=certifi.where())
 
-        geolocator = Nominatim(
-            user_agent="parcel",
-            scheme='https',
-            timeout=10,
-            ssl_context=ctx
-        )
+        geolocator = Nominatim(user_agent="parcel", scheme="https", timeout=10, ssl_context=ctx)
 
         location = geolocator.geocode(address)
 
         if location:
-            logger.info(f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})")
+            logger.info(
+                f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})"
+            )
             return Coordinates(latitude=location.latitude, longitude=location.longitude)
         else:
             logger.warning(f"Could not find location for address: '{address}'")
             return None
 
-    except GeocoderTimedOut:
+    except GeocoderTimedOut as e:
         logger.error(f"The geocoding service timed out while processing address: '{address}'.", exc_info=True)
-        raise GeolocationException(f"Geocoding service timed out for address: {address}")
+        raise GeolocationError(f"Geocoding service timed out for address: {address}") from e
     except GeocoderServiceError as e:
         logger.error(f"A geocoding service error occurred for address '{address}': {e}", exc_info=True)
-        raise GeolocationException(f"Geocoding service error: {e}")
+        raise GeolocationError(f"Geocoding service error: {e}") from e
     except Exception as e:
         logger.error(f"Unexpected error during geocoding for address '{address}': {e}", exc_info=True)
-        raise GeolocationException(f"Unexpected geocoding error: {e}")
+        raise GeolocationError(f"Unexpected geocoding error: {e}") from e

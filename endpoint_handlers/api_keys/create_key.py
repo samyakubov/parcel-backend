@@ -1,8 +1,10 @@
 import secrets
-from pydantic_models import APIKeyConfig
+
 from database_connector import DatabaseConnector
-from exceptions.api_key_exceptions import FailedToCreateApiKeyException
+from exceptions.api_key_exceptions import FailedToCreateApiKeyError
 from logger_config import logger
+from pydantic_models import APIKeyConfig
+
 
 def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
     """Generates and stores a new API key.
@@ -16,12 +18,12 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
 
     Raises:
         ValueError: If the name is empty.
-        FailedToCreateApiKeyException: If the key could not be created.
+        FailedToCreateApiKeyError: If the key could not be created.
     """
     if not name:
         logger.warning("Attempted to create an API key without a name.")
         raise ValueError("API key name cannot be empty.")
-        
+
     try:
         logger.info(f"Attempting to create a new API key with name: '{name}'")
         api_key = secrets.token_urlsafe(32)
@@ -34,7 +36,7 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
         result = db.execute(query, [api_key, name])
         if not result:
             logger.error(f"Database insertion failed when creating API key for name: '{name}'")
-            raise FailedToCreateApiKeyException
+            raise FailedToCreateApiKeyError
 
         row = result[0]
         key_config = APIKeyConfig(
@@ -44,10 +46,10 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
             enabled=row[3],
             created_at=row[4],
             updated_at=row[5],
-            last_used_at=row[6]
+            last_used_at=row[6],
         )
         logger.info(f"Successfully created API key with ID {key_config.id} and name '{key_config.name}'.")
         return key_config
     except Exception as e:
         logger.error(f"An unexpected error occurred while creating an API key for name '{name}': {e}", exc_info=True)
-        raise FailedToCreateApiKeyException from e
+        raise FailedToCreateApiKeyError from e

@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+from endpoints.api_keys import api_key_routes
 from endpoints.property import property_routes
 from exception_handlers import register_exception_handlers
-from endpoints.api_keys import api_key_routes
 
 load_dotenv()
 app = FastAPI()

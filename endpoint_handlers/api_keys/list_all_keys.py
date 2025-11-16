@@ -1,9 +1,8 @@
-from typing import List
 from database_connector import DatabaseConnector
 from pydantic_models import APIKeyConfig
 
 
-def list_all_keys(db: DatabaseConnector) -> List[APIKeyConfig]:
+def list_all_keys(db: DatabaseConnector) -> list[APIKeyConfig]:
     """Lists all API keys from the database.
 
     Note:
@@ -25,14 +24,16 @@ def list_all_keys(db: DatabaseConnector) -> List[APIKeyConfig]:
 
     keys = []
     for row in result:
-        keys.append(APIKeyConfig(
-            id=row[0],
-            key=row[1],
-            name=row[2],
-            enabled=row[3],
-            created_at=row[4],
-            updated_at=row[5],
-            last_used_at=row[6]
-        ))
+        keys.append(
+            APIKeyConfig(
+                id=row[0],
+                key=row[1],
+                name=row[2],
+                enabled=row[3],
+                created_at=row[4],
+                updated_at=row[5],
+                last_used_at=row[6],
+            )
+        )
 
     return keys

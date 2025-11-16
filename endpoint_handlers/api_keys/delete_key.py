@@ -1,6 +1,7 @@
 from database_connector import DatabaseConnector
-from exceptions.api_key_exceptions import FailedToDeleteApiKeyException
+from exceptions.api_key_exceptions import FailedToDeleteApiKeyError
 from logger_config import logger
+
 
 def delete_key(key_id: int, db: DatabaseConnector) -> bool:
     """Deletes an API key by its ID.
@@ -13,14 +14,14 @@ def delete_key(key_id: int, db: DatabaseConnector) -> bool:
         bool: True if the key was deleted, False if the key didn't exist.
 
     Raises:
-        FailedToDeleteApiKeyException: If the key could not be deleted.
+        FailedToDeleteApiKeyError: If the key could not be deleted.
     """
     if not isinstance(key_id, int):
         logger.error(f"Invalid key ID type for deletion: {type(key_id)}. Must be an integer.")
         return False
     try:
         logger.info(f"Attempting to delete API key with ID: {key_id}")
-        
+
         check_query = "SELECT COUNT(*) FROM api_keys WHERE id = ?"
         result = db.execute(check_query, [key_id])
         if result[0][0] == 0:
@@ -36,8 +37,8 @@ def delete_key(key_id: int, db: DatabaseConnector) -> bool:
             return True
         else:
             logger.error(f"Failed to delete API key with ID: {key_id} even though it existed.")
-            raise FailedToDeleteApiKeyException
+            raise FailedToDeleteApiKeyError
 
     except Exception as e:
         logger.error(f"An unexpected error occurred while deleting API key with ID {key_id}: {e}", exc_info=True)
-        raise FailedToDeleteApiKeyException from e
+        raise FailedToDeleteApiKeyError from e
