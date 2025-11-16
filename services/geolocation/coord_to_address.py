@@ -3,8 +3,11 @@ from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 import ssl
 import certifi
 from logger_config import logger
+from typing import Optional, Dict
+from exceptions.geolocation_exceptions import GeolocationException, AddressNotInNewYorkException
 
-def coord_to_address(latitude: float, longitude: float):
+
+def coord_to_address(latitude: float, longitude: float) -> Optional[Dict[str, str]]:
     """
     Convert geographic coordinates into a formatted street address.
 
@@ -14,9 +17,13 @@ def coord_to_address(latitude: float, longitude: float):
 
     Returns:
         dict | None: A dictionary containing the formatted address, or None if lookup fails.
+        
+    Raises:
+        GeolocationException: If the geocoding service fails.
+        AddressNotInNewYorkException: If the address is not in New York.
     """
     if latitude is None or longitude is None:
-        logger.error("Latitude and/or longitude were not provided for reverse geocoding.")
+        logger.warning("Latitude and/or longitude were not provided for reverse geocoding.")
         return None
     try:
         ctx = ssl.create_default_context(cafile=certifi.where())
@@ -35,9 +42,9 @@ def coord_to_address(latitude: float, longitude: float):
 
         formatted_address = location.address
         parts = location.address.split(',')
-        if "new york" not in parts[5].strip().lower():
+        if len(parts) < 6 or "new york" not in parts[5].strip().lower():
             logger.warning(f"Address found for coordinates ({latitude}, {longitude}) is not in New York: '{location.address}'")
-            return None
+            raise AddressNotInNewYorkException(f"Address is not in New York: {location.address}")
 
         if len(parts) >= 2:
             formatted_address = f"{parts[0].strip()} {parts[1].strip()}"
@@ -45,12 +52,14 @@ def coord_to_address(latitude: float, longitude: float):
         logger.info(f"Successfully reverse geocoded coordinates ({latitude}, {longitude}) to address: '{formatted_address}'")
         return {"address": formatted_address}
 
+    except AddressNotInNewYorkException:
+        raise
     except GeocoderTimedOut:
         logger.error(f"The geocoding service timed out while processing coordinates: ({latitude}, {longitude}).", exc_info=True)
-        return None
+        raise GeolocationException(f"Geocoding service timed out for coordinates: ({latitude}, {longitude})")
     except GeocoderServiceError as e:
         logger.error(f"A geocoding service error occurred for coordinates ({latitude}, {longitude}): {e}", exc_info=True)
-        return None
+        raise GeolocationException(f"Geocoding service error: {e}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred during reverse geocoding for coordinates ({latitude}, {longitude}): {e}", exc_info=True)
-        return None
+        logger.error(f"Unexpected error during reverse geocoding for coordinates ({latitude}, {longitude}): {e}", exc_info=True)
+        raise GeolocationException(f"Unexpected geocoding error: {e}")

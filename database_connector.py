@@ -1,4 +1,11 @@
 import duckdb
+from logger_config import logger
+
+
+class DatabaseError(Exception):
+    """Exception raised for database-related errors."""
+    pass
+
 
 class DatabaseConnector:
     """A class to connect to a DuckDB database and execute queries."""
@@ -18,9 +25,16 @@ class DatabaseConnector:
 
         Returns:
             duckdb.DuckDBPyConnection: A connection object to the database.
+            
+        Raises:
+            DatabaseError: If the connection fails.
         """
         if not self.conn:
-            self.conn = duckdb.connect(self.db_path)
+            try:
+                self.conn = duckdb.connect(self.db_path)
+            except Exception as e:
+                logger.error(f"Failed to connect to database at {self.db_path}: {e}", exc_info=True)
+                raise DatabaseError(f"Failed to connect to database: {e}") from e
         return self.conn
 
     def execute(self, query, params=None):
@@ -33,11 +47,20 @@ class DatabaseConnector:
 
         Returns:
             list: A list of tuples representing the query results.
+            
+        Raises:
+            DatabaseError: If the query execution fails.
         """
-        conn = self.connect()
-        if params:
-            return conn.execute(query, params).fetchall()
-        return conn.execute(query).fetchall()
+        try:
+            conn = self.connect()
+            if params:
+                return conn.execute(query, params).fetchall()
+            return conn.execute(query).fetchall()
+        except DatabaseError:
+            raise
+        except Exception as e:
+            logger.error(f"Database query execution failed: {e}", exc_info=True)
+            raise DatabaseError(f"Query execution failed: {e}") from e
 
     def execute_df(self, query, params=None):
         """Executes a SQL query and returns the results as a Pandas DataFrame.
@@ -49,11 +72,20 @@ class DatabaseConnector:
 
         Returns:
             pandas.DataFrame: A DataFrame containing the query results.
+            
+        Raises:
+            DatabaseError: If the query execution fails.
         """
-        conn = self.connect()
-        if params:
-            return conn.execute(query, params).df()
-        return conn.execute(query).df()
+        try:
+            conn = self.connect()
+            if params:
+                return conn.execute(query, params).df()
+            return conn.execute(query).df()
+        except DatabaseError:
+            raise
+        except Exception as e:
+            logger.error(f"Database query execution failed: {e}", exc_info=True)
+            raise DatabaseError(f"Query execution failed: {e}") from e
 
     def close(self):
         """Closes the database connection."""

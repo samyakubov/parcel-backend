@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.exceptions import AddressNotFoundException, InvalidAddressException
+from exceptions.property_search_exceptions import AddressNotFoundException, InvalidAddressException
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
 from endpoint_handlers.property_search.helper_functions.get_current_home_owner import get_current_home_owner
@@ -75,23 +75,25 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         )
 
         logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
+        
+        # Get coordinates, but don't fail if geolocation service is unavailable
+        try:
+            coordinates = address_to_coord(address)
+        except Exception as e:
+            logger.warning(f"Failed to get coordinates for address '{address}': {e}")
+            coordinates = None
+        
         return PropertyDetailsResponse(
-            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,
             owners=owners,
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, db),
             violations=get_violations(bbl, db),
             complaints=get_complaints(address, db),
             zoning=get_zoning(bbl, db),
-            coordinates=address_to_coord(address)
+            coordinates=coordinates
         )
 
     except (InvalidAddressException, AddressNotFoundException) as e:
         logger.error(f"{type(e).__name__} occurred while searching for address '{address}': {e}")
         raise
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in search_by_property_address for address '{address}': {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred while processing your request."
-        )

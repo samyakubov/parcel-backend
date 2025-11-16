@@ -3,7 +3,7 @@ from typing import Optional
 
 from database_connector import DatabaseConnector
 from database_connector import get_db
-from endpoint_handlers.api_keys.exceptions import MissingApiKeyException, InvalidApiKeyException
+from exceptions.api_key_exceptions import MissingApiKeyException, InvalidApiKeyException
 from endpoint_handlers.api_keys.update_key import update_last_used
 from logger_config import logger
 

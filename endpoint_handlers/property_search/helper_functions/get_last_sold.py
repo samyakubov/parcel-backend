@@ -1,6 +1,6 @@
 from typing import Optional
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.exceptions import InvalidBBLException
+from exceptions.property_search_exceptions import InvalidBBLException
 from logger_config import logger
 import pandas as pd
 

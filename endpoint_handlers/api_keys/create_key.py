@@ -1,7 +1,7 @@
 import secrets
-from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
+from pydantic_models import APIKeyConfig
 from database_connector import DatabaseConnector
-from endpoint_handlers.api_keys.exceptions import FailedToCreateApiKeyException
+from exceptions.api_key_exceptions import FailedToCreateApiKeyException
 from logger_config import logger
 
 def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
@@ -24,7 +24,6 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
         
     try:
         logger.info(f"Attempting to create a new API key with name: '{name}'")
-        # Generate cryptographically secure random key
         api_key = secrets.token_urlsafe(32)
 
         query = """

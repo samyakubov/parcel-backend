@@ -1,6 +1,5 @@
 from typing import Dict
 from fastapi import APIRouter, Depends
-
 from database_connector import DatabaseConnector
 from database_connector import get_db
 from endpoint_handlers.api_keys.validate_api_key import validate_api_key

@@ -1,6 +1,6 @@
 from typing import List
 from database_connector import DatabaseConnector
-from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
+from pydantic_models import APIKeyConfig
 
 
 def list_all_keys(db: DatabaseConnector) -> List[APIKeyConfig]:

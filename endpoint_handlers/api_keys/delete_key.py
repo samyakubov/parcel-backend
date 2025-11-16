@@ -1,5 +1,5 @@
 from database_connector import DatabaseConnector
-from endpoint_handlers.api_keys.exceptions import FailedToDeleteApiKeyException
+from exceptions.api_key_exceptions import FailedToDeleteApiKeyException
 from logger_config import logger
 
 def delete_key(key_id: int, db: DatabaseConnector) -> bool:

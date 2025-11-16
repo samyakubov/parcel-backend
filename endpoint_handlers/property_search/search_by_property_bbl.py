@@ -1,7 +1,4 @@
-from fastapi import HTTPException
-from starlette import status
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.exceptions import BBLNotFoundException, InvalidBBLException
 from endpoint_handlers.property_search.helper_functions.add_ordinal_to_street_number import add_ordinal_to_street_number
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
@@ -12,10 +9,10 @@ from endpoint_handlers.property_search.helper_functions.get_previous_owners impo
 from endpoint_handlers.property_search.helper_functions.get_violations import get_violations
 from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
 from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
+from exceptions.property_search_exceptions import InvalidBBLException, BBLNotFoundException
 from logger_config import logger
 from pydantic_models import Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
-
 
 def search_by_property_bbl(bbl: str, db: DatabaseConnector):
     """Searches for a property by its BBL.
@@ -27,7 +24,6 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector):
     Raises:
         InvalidBBLException: If the BBL is invalid.
         BBLNotFoundException: If the BBL is not found.
-        HTTPException: If an unexpected error occurs.
 
     Returns:
         dict: A dictionary containing the property information.
@@ -70,22 +66,27 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector):
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
+        
+        # Get coordinates, but don't fail if geolocation service is unavailable
+        try:
+            address_str = add_ordinal_to_street_number(
+                standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower())
+            )
+            coordinates = address_to_coord(address_str)
+        except Exception as e:
+            logger.warning(f"Failed to get coordinates for BBL '{bbl}': {e}")
+            coordinates = None
+        
         return PropertyDetailsResponse(
-            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,
             owners=owners,
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, db),
             violations=get_violations(bbl, db),
             complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, db),
             zoning=get_zoning(bbl, db),
-            coordinates= address_to_coord(add_ordinal_to_street_number(standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower())))
+            coordinates=coordinates
         )
     except (InvalidBBLException, BBLNotFoundException) as e:
         logger.warning(f"{type(e).__name__} occurred while searching for BBL '{bbl}': {e}")
         raise
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in search_by_property_bbl for BBL {bbl}: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred while processing your request."
-        )
