@@ -1,10 +1,10 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.helper_functions.get_phone_number_by_bbl import get_phone_number_by_bbl
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
-def get_previous_home_owners(bbl:str):
+def get_previous_home_owners(bbl:str, db: DatabaseConnector):
     """Gets the previous homeowners for a given BBL.
 
     This function first tries to find the owners from deed documents.
@@ -12,6 +12,7 @@ def get_previous_home_owners(bbl:str):
 
     Args:
         bbl (str): The BBL of the property to get the previous home owners for.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         list: A list of strings, where each string is the owner's name and their phone number.
@@ -24,7 +25,7 @@ def get_previous_home_owners(bbl:str):
     try:
         logger.info(f"--------------------Searching for previous home owners of BBL: {bbl}--------------------")
         deed_records = db.execute_df("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'DEED' AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER') ORDER BY record_filed DESC ", [bbl])
-        phone_numbers = get_phone_number_by_bbl(bbl)
+        phone_numbers = get_phone_number_by_bbl(bbl, db)
 
         if not deed_records.empty:
             logger.info(f"Found {len(deed_records)} deed records for BBL {bbl}")
@@ -37,7 +38,7 @@ def get_previous_home_owners(bbl:str):
         logger.info(f"No previous owners found from deed records for BBL {bbl}")
         mortgage_doc = db.execute_df("SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, record_filed, bbl, doc_type ORDER BY record_filed DESC LIMIT 1", [bbl])
 
-        if mortgage_doc:
+        if not mortgage_doc.empty:
             logger.info(f"Found latest mortgage document with ID {mortgage_doc.iloc[0]['documentid']} for BBL {bbl}. Fetching mortgagor records.")
             mortgage_records = db.execute_df("SELECT party_name AS owner_name FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'", [mortgage_doc.iloc[0]['documentid']])
             if not mortgage_records.empty:

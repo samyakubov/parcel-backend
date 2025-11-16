@@ -1,6 +1,9 @@
-from database_connector import db
+from fastapi import Depends
+from database_connector import DatabaseConnector
+from main import get_db
 
-def init_key_table():
+
+def init_key_table(db: DatabaseConnector = Depends(get_db)):
     """Initializes the `api_keys` table in the database.
 
     This function creates the `api_keys` table if it does not already exist.

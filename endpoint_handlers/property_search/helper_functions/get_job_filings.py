@@ -1,14 +1,15 @@
 from typing import List
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 from pydantic_models import JobFiled
 
 
-def get_job_filings(bbl:str)-> List[JobFiled]:
+def get_job_filings(bbl:str, db: DatabaseConnector)-> List[JobFiled]:
     """Gets job filings for a given BBL.
 
     Args:
         bbl (str): The BBL of the property to get job filings for.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         list: A list of dictionaries, where each dictionary is a job filing.

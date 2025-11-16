@@ -1,15 +1,16 @@
 from typing import Optional
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
 from pydantic_models import Zoning
 
 
-def get_zoning(bbl: str) -> Optional[Zoning]:
+def get_zoning(bbl: str, db: DatabaseConnector) -> Optional[Zoning]:
     """Gets the zoning information for a given BBL.
 
     Args:
         bbl: The BBL (Borough-Block-Lot) of the property to get zoning information for.
+        db: The database connector instance.
 
     Returns:
         A Zoning object containing the zoning information, or None if no information is found.

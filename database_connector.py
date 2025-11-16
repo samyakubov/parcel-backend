@@ -60,6 +60,3 @@ class DatabaseConnector:
         if self.conn:
             self.conn.close()
             self.conn = None
-
-
-db = DatabaseConnector("nycdb.duckdb")

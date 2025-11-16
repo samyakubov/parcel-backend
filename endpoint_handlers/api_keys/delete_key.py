@@ -1,12 +1,13 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.api_keys.exceptions import FailedToDeleteApiKeyException
 from logger_config import logger
 
-def delete_key(key_id: int) -> bool:
+def delete_key(key_id: int, db: DatabaseConnector) -> bool:
     """Deletes an API key by its ID.
 
     Args:
         key_id (int): The ID of the API key to delete.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         bool: True if the key was deleted, False if the key didn't exist.

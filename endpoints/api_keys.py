@@ -1,6 +1,8 @@
 import os
 from fastapi import APIRouter, Header, HTTPException, Depends
 from starlette import status
+from database_connector import DatabaseConnector
+from main import get_db
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
 from endpoint_handlers.api_keys.exceptions import MissingAdminKeyException, InvalidAdminKeyException, FailedToCreateApiKeyException, FailedToDeleteApiKeyException
@@ -34,11 +36,12 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
 
 
 @api_key_routes.get("/create-key/{username}", dependencies=[Depends(verify_admin_key)])
-def create_api_key(username: str):
+def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
     """Creates a new API key.
 
     Args:
         username (str): The name of the user to create the key for.
+        db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
         FailedToCreateApiKeyException: If the API key could not be created.
@@ -48,7 +51,7 @@ def create_api_key(username: str):
         CreateAPIKeyResponse: The new API key details.
     """
     try:
-        key_config = create_key(username)
+        key_config = create_key(username, db=db)
         
         return CreateAPIKeyResponse(
             id=key_config.id,
@@ -57,7 +60,7 @@ def create_api_key(username: str):
             enabled=key_config.enabled,
             created_at=key_config.created_at.isoformat()
         )
-    except FailedToCreateApiKeyException as e:
+    except FailedToCreateApiKeyException:
         raise
     except Exception as e:
         logger.error(str(e))
@@ -67,8 +70,11 @@ def create_api_key(username: str):
 
 
 @api_key_routes.get("/list-keys", response_model=list[APIKeyListItem], dependencies=[Depends(verify_admin_key)])
-def list_api_keys():
+def list_api_keys(db: DatabaseConnector = Depends(get_db)):
     """Lists all API keys without exposing the actual key values.
+
+    Args:
+        db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
         HTTPException: If an unexpected error occurs.
@@ -77,9 +83,8 @@ def list_api_keys():
         list[APIKeyListItem]: A list of all API keys.
     """
     try:
-        keys = list_all_keys()
+        keys = list_all_keys(db=db)
         
-        # Return keys without exposing the actual key values
         return [
             APIKeyListItem(
                 id=key.id,
@@ -99,11 +104,12 @@ def list_api_keys():
 
 
 @api_key_routes.delete("/delete-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def delete_api_key(key_id: int):
+def delete_api_key(key_id: int, db: DatabaseConnector = Depends(get_db)):
     """Deletes an API key by ID.
 
     Args:
         key_id (int): The ID of the API key to delete.
+        db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
         FailedToDeleteApiKeyException: If the API key could not be deleted.
@@ -113,7 +119,7 @@ def delete_api_key(key_id: int):
         MessageResponse: A message indicating the result of the deletion.
     """
     try:
-        success = delete_key(key_id)
+        success = delete_key(key_id, db=db)
         
         if not success:
             raise FailedToDeleteApiKeyException
@@ -128,12 +134,13 @@ def delete_api_key(key_id: int):
 
 
 @api_key_routes.patch("/update-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def update_api_key(key_id: int, request: UpdateAPIKeyRequest):
+def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)):
     """Updates API key properties (name and/or enabled status).
 
     Args:
         key_id (int): The ID of the API key to update.
         request (UpdateAPIKeyRequest): The request body containing the new values.
+        db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
         HTTPException: If the request is invalid or an unexpected error occurs.
@@ -149,6 +156,7 @@ def update_api_key(key_id: int, request: UpdateAPIKeyRequest):
         
         success = update_key(
             key_id=key_id,
+            db=db,
             name=request.name,
             enabled=request.enabled
         )

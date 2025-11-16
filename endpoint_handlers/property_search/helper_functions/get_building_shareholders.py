@@ -1,8 +1,8 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_building_shareholders(bbl: str):
+def get_building_shareholders(bbl: str, db: DatabaseConnector):
     """Gets the current shareholders of a building.
 
     This function analyzes the transaction history of a building to determine the current shareholders.
@@ -10,6 +10,7 @@ def get_building_shareholders(bbl: str):
 
     Args:
         bbl (str): The BBL of the building.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         list: A list of the current shareholders. Returns an empty list if no shareholders are found

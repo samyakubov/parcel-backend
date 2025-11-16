@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from starlette import status
-from database_connector import db
+
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.exceptions import BBLNotFoundException, InvalidBBLException
 from endpoint_handlers.property_search.helper_functions.add_ordinal_to_street_number import add_ordinal_to_street_number
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
@@ -17,11 +18,12 @@ from pydantic_models import Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
 
 
-def search_by_property_bbl(bbl: str):
+def search_by_property_bbl(bbl: str, db: DatabaseConnector):
     """Searches for a property by its BBL.
 
     Args:
         bbl (str): The BBL of the property to search for.
+        db (DatabaseConnector): The database connector instance.
 
     Raises:
         InvalidBBLException: If the BBL is invalid.
@@ -57,26 +59,26 @@ def search_by_property_bbl(bbl: str):
 
         if prop_type in COOP_PROPERTY_TYPES:
             logger.info(f"Property type is a CO-OP ('{prop_type}'). Fetching shareholder information for BBL {bbl}.")
-            current_owner_data = get_building_shareholders(bbl)
+            current_owner_data = get_building_shareholders(bbl, db)
 
         if len(current_owner_data) == 0:
             logger.info(f"No shareholder information found or property is not a CO-OP. Fetching current home owner for BBL {bbl}.")
-            current_owner_data = get_current_home_owner(bbl)
+            current_owner_data = get_current_home_owner(bbl, db)
 
-        all_previous_data = get_previous_home_owners(bbl)
+        all_previous_data = get_previous_home_owners(bbl, db)
 
         owners = Owners(
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
         return PropertyDetailsResponse(
-            last_sold=get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
             owners=owners,
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            job_filings=get_job_filings(bbl),
-            violations=get_violations(bbl),
-            complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname),
-            zoning=get_zoning(bbl),
+            job_filings=get_job_filings(bbl, db),
+            violations=get_violations(bbl, db),
+            complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, db),
+            zoning=get_zoning(bbl, db),
             coordinates= address_to_coord(add_ordinal_to_street_number(standardize_address(str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower())))
         )
     except (InvalidBBLException, BBLNotFoundException) as e:

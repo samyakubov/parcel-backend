@@ -1,14 +1,17 @@
 from typing import List
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
 
 
-def list_all_keys() -> List[APIKeyConfig]:
+def list_all_keys(db: DatabaseConnector) -> List[APIKeyConfig]:
     """Lists all API keys from the database.
 
     Note:
         This function returns the full key values. The caller is responsible for
         filtering sensitive data before displaying it.
+
+    Args:
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         List[APIKeyConfig]: A list of all API keys.

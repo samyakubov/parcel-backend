@@ -1,14 +1,15 @@
 from typing import List
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 from pydantic_models import Violation
 
 
-def get_violations(bbl: str) -> List[Violation]:
+def get_violations(bbl: str, db: DatabaseConnector) -> List[Violation]:
     """Gets violations for a given BBL.
 
     Args:
         bbl: The BBL (Borough-Block-Lot) of the property to get violations for.
+        db: The database connector instance.
 
     Returns:
         A list of Violation objects containing violation information.

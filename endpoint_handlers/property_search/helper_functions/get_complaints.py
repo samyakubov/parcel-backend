@@ -1,16 +1,17 @@
 from typing import List
 import pandas as pd
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
 from pydantic_models import Complaint
 
 
-def get_complaints(address: str) -> List[Complaint]:
+def get_complaints(address: str, db: DatabaseConnector) -> List[Complaint]:
     """Gets complaints for a given address.
 
     Args:
         address: The address to get complaints for.
+        db: The database connector instance.
 
     Returns:
         A list of Complaint objects containing complaint information.

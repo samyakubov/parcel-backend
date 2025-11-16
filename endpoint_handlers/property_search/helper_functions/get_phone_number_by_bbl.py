@@ -1,12 +1,13 @@
-from database_connector import db
+from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_phone_number_by_bbl(bbl:str):
+def get_phone_number_by_bbl(bbl:str, db: DatabaseConnector):
     """Gets phone numbers for a given BBL.
 
     Args:
         bbl (str): The BBL of the property to get phone numbers for.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         pandas.DataFrame: A DataFrame containing the phone numbers and names of the owners.

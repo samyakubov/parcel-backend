@@ -1,5 +1,5 @@
 from typing import Optional
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.exceptions import InvalidBBLException
 from logger_config import logger
 import pandas as pd
@@ -7,7 +7,7 @@ import pandas as pd
 from pydantic_models import LastSold
 
 
-def get_last_sold(bbl: str) -> Optional[LastSold]:
+def get_last_sold(bbl: str, db: DatabaseConnector) -> Optional[LastSold]:
     """Gets the last sold information for a given BBL.
 
     This function compares the latest sale record and the latest deed record to determine the most accurate
@@ -15,6 +15,7 @@ def get_last_sold(bbl: str) -> Optional[LastSold]:
 
     Args:
         bbl: The BBL (Borough-Block-Lot) of the property to get the last sold information for.
+        db: The database connector instance.
 
     Returns:
         A LastSold object containing the last sold information, or None if no information is found.
@@ -26,8 +27,8 @@ def get_last_sold(bbl: str) -> Optional[LastSold]:
         raise InvalidBBLException
     try:
         logger.info(f"--------------------Fetching last sold information for BBL: {bbl}--------------------")
-        sale_data = _get_latest_sale_record(bbl)
-        deed_data = _get_latest_deed_record(bbl)
+        sale_data = _get_latest_sale_record(bbl, db)
+        deed_data = _get_latest_deed_record(bbl, db)
         sale_date = sale_data.last_sold_date if sale_data else None
         deed_date = deed_data.last_sold_date if deed_data else None
 
@@ -75,11 +76,12 @@ def get_last_sold(bbl: str) -> Optional[LastSold]:
         return None
 
 
-def _get_latest_sale_record(bbl: str) -> Optional[LastSold]:
+def _get_latest_sale_record(bbl: str, db: DatabaseConnector) -> Optional[LastSold]:
     """Gets the latest sale record for a given BBL.
 
     Args:
         bbl: The BBL of the property.
+        db: The database connector instance.
 
     Returns:
         A LastSold object containing the latest sale record information, or None if no record is found.
@@ -106,11 +108,12 @@ def _get_latest_sale_record(bbl: str) -> Optional[LastSold]:
     return None
 
 
-def _get_latest_deed_record(bbl: str) -> Optional[LastSold]:
+def _get_latest_deed_record(bbl: str, db: DatabaseConnector) -> Optional[LastSold]:
     """Gets the latest deed record for a given BBL.
 
     Args:
         bbl: The BBL of the property.
+        db: The database connector instance.
 
     Returns:
         A LastSold object containing the latest deed record information, or None if no record is found.
@@ -138,7 +141,7 @@ def _get_latest_deed_record(bbl: str) -> Optional[LastSold]:
 
     if latest.last_sold_price < 1000:
         logger.info(f"Deed price is low (< $1000). Attempting to find a more representative price for BBL: {bbl}")
-        return _handle_low_price_deed_case(bbl, deeds_df, latest)
+        return _handle_low_price_deed_case(bbl, deeds_df, latest, db)
 
     return LastSold(
         last_sold_price=int(latest.last_sold_price),
@@ -146,7 +149,7 @@ def _get_latest_deed_record(bbl: str) -> Optional[LastSold]:
     )
 
 
-def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Series) -> Optional[LastSold]:
+def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Series, db: DatabaseConnector) -> Optional[LastSold]:
     """Handles cases where the latest deed has a low price.
 
     This can happen in cases of deed transfers between family members or trusts.
@@ -155,6 +158,7 @@ def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Ser
         bbl: The BBL of the property.
         deeds_df: A DataFrame of deed records.
         latest: The latest deed record.
+        db: The database connector instance.
 
     Returns:
         A LastSold object containing the last sold information, or the result of _match_deed_with_mortgage.
@@ -168,15 +172,16 @@ def _handle_low_price_deed_case(bbl: str, deeds_df: pd.DataFrame, latest: pd.Ser
                 last_sold_date=prev.sale_date
             )
 
-    return _match_deed_with_mortgage(bbl, deeds_df)
+    return _match_deed_with_mortgage(bbl, deeds_df, db)
 
 
-def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame) -> Optional[LastSold]:
+def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, db: DatabaseConnector) -> Optional[LastSold]:
     """Matches a low-price deed with a mortgage.
 
     Args:
         bbl: The BBL of the property.
         deeds_df: A DataFrame of deed records.
+        db: The database connector instance.
 
     Returns:
         A LastSold object containing the last sold information, or None if no match is found.

@@ -1,14 +1,15 @@
 import secrets
 from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
-from database_connector import db
+from database_connector import DatabaseConnector
 from endpoint_handlers.api_keys.exceptions import FailedToCreateApiKeyException
 from logger_config import logger
 
-def create_key(name: str) -> APIKeyConfig:
+def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
     """Generates and stores a new API key.
 
     Args:
         name (str): The name to associate with the API key.
+        db (DatabaseConnector): The database connector instance.
 
     Returns:
         APIKeyConfig: The created APIKeyConfig with the generated key.

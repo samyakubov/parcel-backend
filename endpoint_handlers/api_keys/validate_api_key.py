@@ -1,17 +1,19 @@
-from fastapi import Header
+from fastapi import Header, Depends
 from typing import Optional
-from database_connector import db
-from endpoint_handlers.api_keys.api_key_config import APIKeyConfig
+
+from database_connector import DatabaseConnector
+from main import get_db
 from endpoint_handlers.api_keys.exceptions import MissingApiKeyException, InvalidApiKeyException
 from endpoint_handlers.api_keys.update_key import update_last_used
 from logger_config import logger
 
-async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
+async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key"), db: DatabaseConnector = Depends(get_db)):
     """FastAPI dependency that validates an API key from the X-API-Key header.
 
     Args:
         x_api_key (Optional[str], optional): The API key from the X-API-Key header. 
             Defaults to Header(None, alias="X-API-Key").
+        db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
         MissingApiKeyException: If the API key is missing.
@@ -39,6 +41,6 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
         raise InvalidApiKeyException
 
     # Update last_used_at timestamp
-    update_last_used(x_api_key)
+    update_last_used(x_api_key, db=db)
 
     logger.info(f"Authentication successful with given Key")

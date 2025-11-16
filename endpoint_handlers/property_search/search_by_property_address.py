@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 from starlette import status
+
+from database_connector import DatabaseConnector
 from endpoint_handlers.property_search.exceptions import AddressNotFoundException, InvalidAddressException
 from endpoint_handlers.property_search.helper_functions.get_building_shareholders import get_building_shareholders
 from endpoint_handlers.property_search.helper_functions.get_complaints import get_complaints
@@ -11,15 +13,15 @@ from endpoint_handlers.property_search.helper_functions.get_violations import ge
 from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
 from logger_config import logger
 from services.geolocation.address_to_coord import address_to_coord
-from database_connector import db
 from pydantic_models import Owners, PropertyDetailsResponse
 
 
-def search_by_property_address(address: str) -> PropertyDetailsResponse:
+def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
         address: The address of the property to search for.
+        db: The database connector instance.
 
     Raises:
         InvalidAddressException: If the address is invalid.
@@ -61,12 +63,12 @@ def search_by_property_address(address: str) -> PropertyDetailsResponse:
         logger.info(f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n")
 
         if prop_type in COOP_PROPERTY_TYPES:
-            current_owner_data = get_building_shareholders(bbl)
+            current_owner_data = get_building_shareholders(bbl, db)
 
         if len(current_owner_data) == 0:
-            current_owner_data = get_current_home_owner(bbl)
+            current_owner_data = get_current_home_owner(bbl, db)
 
-        all_previous_data = get_previous_home_owners(bbl)
+        all_previous_data = get_previous_home_owners(bbl, db)
         owners = Owners(
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
@@ -74,13 +76,13 @@ def search_by_property_address(address: str) -> PropertyDetailsResponse:
 
         logger.info(f"--------------------------Successfully compiled all data for address: '{address}'--------------------------")
         return PropertyDetailsResponse(
-            last_sold=get_last_sold(bbl) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
+            last_sold=get_last_sold(bbl, db) if prop_type not in COOP_PROPERTY_TYPES else None,  # Changed [] to None
             owners=owners,
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            job_filings=get_job_filings(bbl),
-            violations=get_violations(bbl),
-            complaints=get_complaints(address),
-            zoning=get_zoning(bbl),
+            job_filings=get_job_filings(bbl, db),
+            violations=get_violations(bbl, db),
+            complaints=get_complaints(address, db),
+            zoning=get_zoning(bbl, db),
             coordinates=address_to_coord(address)
         )
 
