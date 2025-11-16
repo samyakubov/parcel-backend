@@ -30,11 +30,7 @@ class DatabaseConnector:
             DatabaseError: If the connection fails.
         """
         if not self.conn:
-            try:
-                self.conn = duckdb.connect(self.db_path)
-            except Exception as e:
-                logger.error(f"Failed to connect to database at {self.db_path}: {e}", exc_info=True)
-                raise DatabaseError(f"Failed to connect to database: {e}") from e
+            self.conn = duckdb.connect(self.db_path)
         return self.conn
 
     def execute(self, query, params=None):

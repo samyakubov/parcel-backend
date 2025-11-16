@@ -34,7 +34,7 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")):
         raise InvalidAdminKeyException
 
 
-@api_key_routes.get("/create-key/{username}", dependencies=[Depends(verify_admin_key)])
+@api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
 def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)):
     """Creates a new API key.
 
@@ -84,12 +84,12 @@ def list_api_keys(db: DatabaseConnector = Depends(get_db)):
     ]
 
 
-@api_key_routes.delete("/delete-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
-def delete_api_key(key_id: int, db: DatabaseConnector = Depends(get_db)):
+@api_key_routes.delete("/delete-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
+def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)):
     """Deletes an API key by ID.
 
     Args:
-        key_id (int): The ID of the API key to delete.
+        key_id (str): The ID of the API key to delete.
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
@@ -98,7 +98,7 @@ def delete_api_key(key_id: int, db: DatabaseConnector = Depends(get_db)):
     Returns:
         MessageResponse: A message indicating the result of the deletion.
     """
-    success = delete_key(key_id, db=db)
+    success = delete_key(int(key_id), db=db)
 
     if not success:
         raise FailedToDeleteApiKeyException
@@ -106,7 +106,7 @@ def delete_api_key(key_id: int, db: DatabaseConnector = Depends(get_db)):
     return MessageResponse(message="API key deleted successfully")
 
 
-@api_key_routes.patch("/update-key/{key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
+@api_key_routes.patch("/update-key/key_id={key_id}", response_model=MessageResponse, dependencies=[Depends(verify_admin_key)])
 def update_api_key(key_id: int, request: UpdateAPIKeyRequest, db: DatabaseConnector = Depends(get_db)):
     """Updates API key properties (name and/or enabled status).
 
