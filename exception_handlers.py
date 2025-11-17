@@ -1,9 +1,7 @@
 import logging
-
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette import status
-
 from database_connector import DatabaseError
 from exceptions.api_key_exceptions import (
     APIKeyNotFoundError,

@@ -1,0 +1,33 @@
+import os
+from fastapi import APIRouter, Header
+from starlette import status
+from starlette.responses import JSONResponse
+
+from exceptions.api_key_exceptions import InvalidAdminKeyError, MissingAdminKeyError
+from logger_config import logger
+
+admin_routes = APIRouter(prefix="/admin")
+
+@admin_routes.post("/authenticate")
+def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> JSONResponse:
+    """Verifies the request is using the admin API key.
+
+    Args:
+        api_key (str, optional): The API key from the "X-API-Key" header.
+            Defaults to Header(..., alias="X-API-Key").
+
+    Raises:
+        MissingAdminKeyError: If the admin key is not configured.
+        InvalidAdminKeyError: If the provided API key is invalid.
+    """
+    admin_key = os.getenv("ADMIN_API_KEY")
+
+    if not admin_key:
+        logger.error("Admin key not configured")
+        raise MissingAdminKeyError
+
+    if api_key != admin_key:
+        logger.error("Invalid admin API key")
+        raise InvalidAdminKeyError
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Admin API key is valid" })

@@ -5,14 +5,12 @@ from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
 from endpoint_handlers.api_keys.list_all_keys import list_all_keys
 from endpoint_handlers.api_keys.update_key import update_key
+from endpoints.admin import verify_admin_key
 from exceptions.api_key_exceptions import (
     APIKeyNotFoundError,
     FailedToDeleteApiKeyError,
-    InvalidAdminKeyError,
     InvalidUpdateError,
-    MissingAdminKeyError,
 )
-from logger_config import logger
 from pydantic_models import (
     APIKeyListItem,
     CreateAPIKeyResponse,
@@ -21,28 +19,6 @@ from pydantic_models import (
 )
 
 api_key_routes = APIRouter(prefix="/api-keys")
-
-
-def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> None:
-    """Verifies the request is using the admin API key.
-
-    Args:
-        api_key (str, optional): The API key from the "X-API-Key" header.
-            Defaults to Header(..., alias="X-API-Key").
-
-    Raises:
-        MissingAdminKeyError: If the admin key is not configured.
-        InvalidAdminKeyError: If the provided API key is invalid.
-    """
-    admin_key = os.getenv("ADMIN_API_KEY")
-
-    if not admin_key:
-        logger.error("Admin key not configured")
-        raise MissingAdminKeyError
-
-    if api_key != admin_key:
-        raise InvalidAdminKeyError
-
 
 @api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
 def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
