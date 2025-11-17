@@ -43,7 +43,7 @@ def get_violations(bbl: str, db: DatabaseConnector) -> list[Violation]:
             return []
 
         logger.info(f"--------------------Found {len(violations_df)} violations for BBL: {bbl}--------------------\n")
-        return violations_df.fillna("").to_dict(orient="records")
+        return violations_df.to_dict(orient="records")
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching violations for BBL {bbl}: {e}", exc_info=True)
         return []

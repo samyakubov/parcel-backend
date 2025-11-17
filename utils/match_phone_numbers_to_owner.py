@@ -1,13 +1,13 @@
 import pandas as pd
 
 
-def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame, owners_list: list) -> list[str]:
+def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame | list, owners_list: list) -> list[str]:
     """Matches phone numbers to a list of owner names.
 
     Args:
-        phone_numbers (pd.DataFrame): A DataFrame containing owner names
+        phone_numbers (pd.DataFrame | list): A DataFrame containing owner names
             and phone numbers. Must have the columns 'owner_full_name'
-            and 'owners_phone'.
+            and 'owners_phone'. Can also be an empty list if no phone numbers found.
         owners_list (list): A list of owner names to match against.
 
     Returns:
@@ -18,10 +18,14 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame, owners_list: list)
     """
     owners_df = pd.DataFrame({"owner_full_name": owners_list})
 
-    merged_df = owners_df.merge(phone_numbers[["owner_full_name", "owners_phone"]], on="owner_full_name", how="left")
+    # Handle case when phone_numbers is an empty list
+    if isinstance(phone_numbers, list) or phone_numbers.empty:
+        owners_df["owners_phone"] = "No Phone Number"
+    else:
+        merged_df = owners_df.merge(phone_numbers[["owner_full_name", "owners_phone"]], on="owner_full_name", how="left")
+        owners_df = merged_df
+        owners_df["owners_phone"] = owners_df["owners_phone"].fillna("No Phone Number")
 
-    merged_df["owners_phone"] = merged_df["owners_phone"].fillna("No Phone Number")
-
-    result = merged_df.apply(lambda row: f"{row['owner_full_name']} ({row['owners_phone']})", axis=1)
+    result = owners_df.apply(lambda row: f"{row['owner_full_name']} ({row['owners_phone']})", axis=1)
 
     return result.tolist()

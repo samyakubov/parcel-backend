@@ -59,6 +59,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
         records_df = records_df.drop(columns=["search_prop_address"])
         current_owner_data = []
+        should_get_last_sold_for_buildings = False
 
         coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
 
@@ -73,10 +74,12 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             logger.info(f"Property type is a CO-OP ('{prop_type}'). Fetching shareholder information for BBL {bbl}.")
             current_owner_data = get_building_shareholders(bbl, db)
 
+        #means the building is privately owned and has one owner
         if len(current_owner_data) == 0:
             logger.info(
                 f"No shareholder information found or property is not a CO-OP. Fetching current home owner for BBL {bbl}."
             )
+            should_get_last_sold_for_buildings = True
             current_owner_data = get_current_home_owner(bbl, db)
 
         all_previous_data = get_previous_home_owners(bbl, db)
@@ -98,7 +101,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             coordinates = None
 
         return PropertyDetailsResponse(
-            last_sold=get_last_sold(bbl, db) if prop_type not in coop_property_types else None,
+            last_sold = get_last_sold(bbl, db) if prop_type not in coop_property_types or should_get_last_sold_for_buildings else None,
             owners=owners,
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, db),
