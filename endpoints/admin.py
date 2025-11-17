@@ -20,14 +20,14 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> JSONRespo
         MissingAdminKeyError: If the admin key is not configured.
         InvalidAdminKeyError: If the provided API key is invalid.
     """
-    admin_key = os.getenv("ADMIN_API_KEY")
+    admin_key = os.getenv("ADMIN_PASSWORD")
 
     if not admin_key:
-        logger.error("Admin key not configured")
+        logger.error("Admin password not configured")
         raise MissingAdminKeyError
 
     if api_key != admin_key:
-        logger.error("Invalid admin API key")
+        logger.error("Invalid admin password")
         raise InvalidAdminKeyError
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Admin API key is valid" })
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "" })

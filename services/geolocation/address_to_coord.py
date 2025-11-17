@@ -43,6 +43,12 @@ def address_to_coord(address: str) -> Coordinates | None:
             return None
 
     except GeocoderTimedOut as e:
+        error_msg = str(e)
+        if "503" in error_msg or "Service Unavailable" in error_msg:
+            logger.warning(
+                f"Geocoding service is temporarily unavailable for address: '{address}'. Returning None instead of raising error."
+            )
+            return None
         logger.error(f"The geocoding service timed out while processing address: '{address}'.", exc_info=True)
         raise GeolocationError(f"Geocoding service timed out for address: {address}") from e
     except GeocoderServiceError as e:

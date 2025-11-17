@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
@@ -69,7 +68,7 @@ class PropertyRecord(BaseModel):
     prop_streetnumber: str
     prop_streetname: str
     prop_partiallot: str | None = None
-    prop_type: str
+    prop_type: str | None = None
     party_borough: str | None = None
     partytype_desc: str | None = None
     party_name: str
@@ -194,20 +193,28 @@ class Complaint(BaseModel):
         status: Current status of the complaint (e.g., pending, resolved, closed)
     """
 
-    complaint_number: int
+    complaint_number: int | None = None
     bin: str
     special_district: str | None = None
     complaint_category: str
-    disposition_date: str
-    disposition_code: str
-    inspection_date: str
+    disposition_date: str | None = None
+    disposition_code: str | None = None
+    inspection_date: str | None = None
     dobrun_date: str | None = None
     status: str
 
-    @field_validator("dobrun_date", mode="before")
+    @field_validator("complaint_number", mode="before")
     @classmethod
-    def convert_nan(cls, v):
-        """Convert NaN to None"""
+    def convert_nan_complaint_number(cls, v):
+        """Convert NaN to None for complaint_number"""
+        if pd.isna(v):
+            return None
+        return v
+
+    @field_validator("disposition_date", "inspection_date", "dobrun_date", mode="before")
+    @classmethod
+    def convert_nan_to_none(cls, v):
+        """Convert NaN to None for date fields"""
         if pd.isna(v):
             return None
         return v

@@ -40,16 +40,29 @@ def coord_to_address(latitude: float, longitude: float) -> dict[str, str] | None
             logger.warning(f"Could not find address for coordinates: ({latitude}, {longitude})")
             return None
 
-        formatted_address = location.address
-        parts = location.address.split(",")
-        if len(parts) < 6 or "new york" not in parts[5].strip().lower():
+        # Check if "New York" appears anywhere in the address parts (more flexible)
+        address_lower = location.address.lower()
+        is_in_ny = "new york" in address_lower or ", ny" in address_lower
+        
+        if not is_in_ny:
             logger.warning(
                 f"Address found for coordinates ({latitude}, {longitude}) is not in New York: '{location.address}'"
             )
             raise AddressNotInNewYorkError(f"Address is not in New York: {location.address}")
 
-        if len(parts) >= 2:
-            formatted_address = f"{parts[0].strip()} {parts[1].strip()}"
+
+        
+        raw = location.raw.get("address", {})
+        house_number = raw.get("house_number", "")
+        road = raw.get("road", "")
+        
+        if house_number and road:
+            formatted_address = f"{house_number} {road}"
+        elif road:
+            formatted_address = road
+        else:
+            parts = location.address.split(",")
+            formatted_address = parts[0].strip() if parts else location.address
 
         logger.info(
             f"Successfully reverse geocoded coordinates ({latitude}, {longitude}) to address: '{formatted_address}'"
