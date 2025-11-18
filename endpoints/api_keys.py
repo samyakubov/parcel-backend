@@ -1,20 +1,15 @@
-import os
-
 from fastapi import APIRouter, Depends, Header
-
 from database_connector import DatabaseConnector, get_db
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key
 from endpoint_handlers.api_keys.list_all_keys import list_all_keys
 from endpoint_handlers.api_keys.update_key import update_key
+from endpoints.admin import verify_admin_key
 from exceptions.api_key_exceptions import (
     APIKeyNotFoundError,
     FailedToDeleteApiKeyError,
-    InvalidAdminKeyError,
     InvalidUpdateError,
-    MissingAdminKeyError,
 )
-from logger_config import logger
 from pydantic_models import (
     APIKeyListItem,
     CreateAPIKeyResponse,
@@ -24,34 +19,12 @@ from pydantic_models import (
 
 api_key_routes = APIRouter(prefix="/api-keys")
 
-
-def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> None:
-    """Verifies the request is using the admin API key.
-
-    Args:
-        api_key (str, optional): The API key from the "X-API-Key" header.
-            Defaults to Header(..., alias="X-API-Key").
-
-    Raises:
-        MissingAdminKeyError: If the admin key is not configured.
-        InvalidAdminKeyError: If the provided API key is invalid.
-    """
-    admin_key = os.getenv("ADMIN_API_KEY")
-
-    if not admin_key:
-        logger.error("Admin key not configured")
-        raise MissingAdminKeyError
-
-    if api_key != admin_key:
-        raise InvalidAdminKeyError
-
-
-@api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
-def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
+@api_key_routes.get("/create-key/name={name}", dependencies=[Depends(verify_admin_key)])
+def create_api_key(name: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
     """Creates a new API key.
 
     Args:
-        username (str): The name of the user to create the key for.
+        name (str): The name of the user to create the key for.
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
@@ -60,7 +33,7 @@ def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> Cr
     Returns:
         CreateAPIKeyResponse: The new API key details.
     """
-    key_config = create_key(username, db=db)
+    key_config = create_key(name, db=db)
 
     return CreateAPIKeyResponse(
         id=key_config.id,
@@ -115,7 +88,7 @@ def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)) -> Mess
     success = delete_key(int(key_id), db=db)
 
     if not success:
-        raise FailedToDeleteApiKeyError
+        raise FailedToDeleteApiKeyError("Failed to delete API key")
 
     return MessageResponse(message="API key deleted successfully")
 
@@ -141,11 +114,11 @@ def update_api_key(
         MessageResponse: A message indicating the result of the update.
     """
     if request.name is None and request.enabled is None:
-        raise InvalidUpdateError
+        raise InvalidUpdateError("At least one field (name or enabled) must be provided")
 
     success = update_key(key_id=key_id, db=db, name=request.name, enabled=request.enabled)
 
     if not success:
-        raise APIKeyNotFoundError
+        raise APIKeyNotFoundError(f"API key with ID {key_id} not found")
 
     return MessageResponse(message="API key updated successfully")

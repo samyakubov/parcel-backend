@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
@@ -19,7 +18,6 @@ class APIKeyConfig:
         updated_at (datetime): The timestamp when the API key was last updated.
         last_used_at (Optional[datetime]): The timestamp when the API key was last used.
     """
-
     id: int
     key: str
     name: str
@@ -31,7 +29,6 @@ class APIKeyConfig:
 
 class CreateAPIKeyResponse(BaseModel):
     """Response model for creating a new API key."""
-
     id: int
     key: str
     name: str
@@ -41,7 +38,6 @@ class CreateAPIKeyResponse(BaseModel):
 
 class APIKeyListItem(BaseModel):
     """Response model for listing an API key."""
-
     id: int
     name: str
     enabled: bool
@@ -52,14 +48,12 @@ class APIKeyListItem(BaseModel):
 
 class UpdateAPIKeyRequest(BaseModel):
     """Request model for updating an API key."""
-
     name: str | None = None
     enabled: bool | None = None
 
 
 class MessageResponse(BaseModel):
     """Response model for a simple message."""
-
     message: str
 
 
@@ -74,7 +68,7 @@ class PropertyRecord(BaseModel):
     prop_streetnumber: str
     prop_streetname: str
     prop_partiallot: str | None = None
-    prop_type: str
+    prop_type: str | None = None
     party_borough: str | None = None
     partytype_desc: str | None = None
     party_name: str
@@ -155,16 +149,16 @@ class Violation(BaseModel):
     violation_status: str
     issue_date: str
     violation_type: str
-    description: str
+    description: str | None = None
     severity: str
     penalty_amount: float
     amount_paid: float
     balance_due: float
-    respondent_name: str
-    house_number: str
-    street: str
-    city: str
-    zip: str
+    respondent_name: str | None = None
+    house_number: str | None = None
+    street: str | None = None
+    city: str | None = None
+    zip: str | None = None
 
     @field_validator("issue_date", mode="before")
     @classmethod
@@ -172,6 +166,14 @@ class Violation(BaseModel):
         """Convert pandas Timestamp to string"""
         if isinstance(v, pd.Timestamp):
             return v.strftime("%Y-%m-%d")
+        return v
+
+    @field_validator("penalty_amount", "amount_paid", "balance_due", mode="before")
+    @classmethod
+    def convert_empty_string_to_zero(cls, v):
+        """Convert empty strings to 0.0 for numeric fields"""
+        if v == "" or v is None or (isinstance(v, float) and pd.isna(v)):
+            return 0.0
         return v
 
 
@@ -191,20 +193,28 @@ class Complaint(BaseModel):
         status: Current status of the complaint (e.g., pending, resolved, closed)
     """
 
-    complaint_number: int
+    complaint_number: int | None = None
     bin: str
-    special_district: str | None = None  # Made optional (was None in logs)
+    special_district: str | None = None
     complaint_category: str
-    disposition_date: str
-    disposition_code: str
-    inspection_date: str
-    dobrun_date: str | None = None  # Made optional (was nan in logs)
+    disposition_date: str | None = None
+    disposition_code: str | None = None
+    inspection_date: str | None = None
+    dobrun_date: str | None = None
     status: str
 
-    @field_validator("dobrun_date", mode="before")
+    @field_validator("complaint_number", mode="before")
     @classmethod
-    def convert_nan(cls, v):
-        """Convert NaN to None"""
+    def convert_nan_complaint_number(cls, v):
+        """Convert NaN to None for complaint_number"""
+        if pd.isna(v):
+            return None
+        return v
+
+    @field_validator("disposition_date", "inspection_date", "dobrun_date", mode="before")
+    @classmethod
+    def convert_nan_to_none(cls, v):
+        """Convert NaN to None for date fields"""
         if pd.isna(v):
             return None
         return v
@@ -225,7 +235,7 @@ class JobFiled(BaseModel):
             of the applicant (e.g., architect, engineer, contractor)
     """
 
-    job_description: str
+    job_description: str | None = None
     bin: str
     applicant_first_name: str
     applicant_last_name: str

@@ -1,12 +1,9 @@
-import ssl
-
-import certifi
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut
-from geopy.geocoders import Nominatim
 
 from exceptions.geolocation_exceptions import GeolocationError
 from logger_config import logger
 from pydantic_models import Coordinates
+from services.geolocation.geolocation_helper import get_geolocator
 
 
 def address_to_coord(address: str) -> Coordinates | None:
@@ -27,15 +24,13 @@ def address_to_coord(address: str) -> Coordinates | None:
         logger.warning("No address was provided for geocoding.")
         return None
     try:
-        ctx = ssl.create_default_context(cafile=certifi.where())
-
-        geolocator = Nominatim(user_agent="parcel", scheme="https", timeout=10, ssl_context=ctx)
+        geolocator = get_geolocator()
 
         location = geolocator.geocode(address)
 
         if location:
             logger.info(
-                f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})"
+                f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})\n"
             )
             return Coordinates(latitude=location.latitude, longitude=location.longitude)
         else:

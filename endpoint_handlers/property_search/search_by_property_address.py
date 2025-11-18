@@ -49,7 +49,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
     """
     if not address:
         logger.warning("An attempt was made to search for a property without providing an address.")
-        raise InvalidAddressError
+        raise InvalidAddressError("Address cannot be empty")
 
     try:
         logger.info(
@@ -74,7 +74,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             )
             if records_df.empty:
                 logger.warning(f"No records found for address: '{address}' after lenient search.")
-                raise AddressNotFoundError(address)
+                raise AddressNotFoundError(f"No records found for address: {address}")
 
         bbl = records_df.iloc[0].bbl
         prop_type = records_df.iloc[0].prop_type
@@ -92,10 +92,6 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         owners = Owners(
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
-        )
-
-        logger.info(
-            f"--------------------------Successfully compiled all data for address: '{address}'--------------------------"
         )
 
         try:

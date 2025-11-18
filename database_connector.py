@@ -35,7 +35,11 @@ class DatabaseConnector:
             DatabaseError: If the connection fails.
         """
         if not self.conn:
-            self.conn = duckdb.connect(self.db_path)
+            try:
+                self.conn = duckdb.connect(self.db_path)
+            except Exception as e:
+                logger.error(f"Failed to connect to database at '{self.db_path}': {e}", exc_info=True)
+                raise DatabaseError(f"Database connection failed: {e}") from e
         return self.conn
 
     def execute(self, query, params=None) -> list:
@@ -57,9 +61,9 @@ class DatabaseConnector:
             if params:
                 return conn.execute(query, params).fetchall()
             return conn.execute(query).fetchall()
-        except DatabaseError:
-            raise
         except Exception as e:
+            if isinstance(e, DatabaseError):
+                raise
             logger.error(f"Database query execution failed: {e}", exc_info=True)
             raise DatabaseError(f"Query execution failed: {e}") from e
 
@@ -82,9 +86,9 @@ class DatabaseConnector:
             if params:
                 return conn.execute(query, params).df()
             return conn.execute(query).df()
-        except DatabaseError:
-            raise
         except Exception as e:
+            if isinstance(e, DatabaseError):
+                raise
             logger.error(f"Database query execution failed: {e}", exc_info=True)
             raise DatabaseError(f"Query execution failed: {e}") from e
 

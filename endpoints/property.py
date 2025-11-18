@@ -57,7 +57,7 @@ def search_by_bbl(bbl: str, db: DatabaseConnector = Depends(get_db)) -> Property
 )
 def search_by_fuzz_coords(
     lat: str, long: str, db: DatabaseConnector = Depends(get_db)
-) -> PropertyDetailsResponse | dict[str, str | int]:
+) -> PropertyDetailsResponse:
     """Searches for a property by its fuzzy coordinates.
 
     Args:
@@ -66,14 +66,7 @@ def search_by_fuzz_coords(
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
-        Union[PropertyDetailsResponse, Dict]: A response object containing the property information, or an error message dictionary.
+        PropertyDetailsResponse: A response object containing the property information.
     """
-    try:
-        address = coord_to_address(float(lat), float(long))["address"]
-        return search_by_property_address(address, db)
-    except KeyError:
-        return {"message": "Unable to convert coords", "status_code": 500}
-    except TypeError:
-        return {"message": "Address not in New York", "status_code": 500}
-    except Exception as e:
-        return {"message": "Unknown error: " + str(e), "status_code": 500}
+    address = coord_to_address(float(lat), float(long))["address"]
+    return search_by_property_address(address, db)

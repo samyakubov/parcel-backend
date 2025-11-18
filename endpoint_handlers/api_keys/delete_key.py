@@ -37,8 +37,10 @@ def delete_key(key_id: int, db: DatabaseConnector) -> bool:
             return True
         else:
             logger.error(f"Failed to delete API key with ID: {key_id} even though it existed.")
-            raise FailedToDeleteApiKeyError
+            raise FailedToDeleteApiKeyError(f"Failed to delete API key with ID {key_id}")
 
+    except FailedToDeleteApiKeyError:
+        raise
     except Exception as e:
         logger.error(f"An unexpected error occurred while deleting API key with ID {key_id}: {e}", exc_info=True)
-        raise FailedToDeleteApiKeyError from e
+        raise FailedToDeleteApiKeyError(f"Unexpected error deleting API key: {str(e)}") from e
