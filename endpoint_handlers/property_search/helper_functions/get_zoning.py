@@ -58,7 +58,7 @@ def get_zoning(bbl: str, db: DatabaseConnector) -> Zoning | None:
         commercial_overlays=commercial_overlays,
         special_districts=special_districts,
         limited_height_district=zoning.get("Limited Height District", ""),
-        last_updated="",  # You may want to add this field to your database query
+        last_updated="", 
     )
     logger.info(f"--------------------Successfully processed zoning information for BBL: {bbl}--------------------\n")
     return zoning_data

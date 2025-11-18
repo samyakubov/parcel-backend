@@ -13,7 +13,6 @@ def update_key(key_id: int, db: DatabaseConnector, name: str | None = None, enab
     Returns:
         bool: True if the key was updated, False if the key didn't exist.
     """
-    # Build dynamic update query based on provided parameters
     updates = []
     params = []
 
@@ -26,10 +25,8 @@ def update_key(key_id: int, db: DatabaseConnector, name: str | None = None, enab
         params.append(enabled)
 
     if not updates:
-        # No updates requested
         return False
 
-    # Always update the updated_at timestamp
     updates.append("updated_at = CURRENT_TIMESTAMP")
 
     query = f"UPDATE api_keys SET {', '.join(updates)} WHERE id = ?"
@@ -37,7 +34,6 @@ def update_key(key_id: int, db: DatabaseConnector, name: str | None = None, enab
 
     db.execute(query, params)
 
-    # Check if the key exists
     check_query = "SELECT COUNT(*) FROM api_keys WHERE id = ?"
     result = db.execute(check_query, [key_id])
 

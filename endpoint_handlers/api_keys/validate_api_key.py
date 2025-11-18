@@ -21,7 +21,6 @@ async def validate_api_key(
         InvalidApiKeyError: If the API key is invalid or disabled.
     """
 
-    # Check if API key is provided
     if not x_api_key:
         logger.error("Authentication failed: Missing API key")
         raise MissingApiKeyError("API key is required")
@@ -36,11 +35,9 @@ async def validate_api_key(
     partial_key = x_api_key[:8] if len(x_api_key) >= 8 else x_api_key
 
     if not is_valid_key:
-        # Log authentication failure with partial key (first 8 chars)
         logger.error(f"Authentication failed: Invalid API key ({partial_key}...)")
         raise InvalidApiKeyError("Invalid or disabled API key")
 
-    # Update last_used_at timestamp
     update_last_used(x_api_key, db=db)
 
     logger.info("Authentication successful with given api key \n")
