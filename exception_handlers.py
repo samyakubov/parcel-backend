@@ -80,17 +80,16 @@ def register_exception_handlers(app) -> None:
         return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
 
     # Register all custom exceptions with a single handler
+    def create_handler(exc_type, code, level):
+        async def handler(request: Request, exc: Exception) -> JSONResponse:
+            log_func = getattr(logger, level)
+            log_func(f"{exc_type.__name__}: {exc}")
+            
+            # Use generic message for DatabaseError to avoid exposing internals
+            message = "A database error occurred" if exc_type == DatabaseError else str(exc)
+            
+            return JSONResponse(status_code=code, content={"message": message})
+        return handler
+    
     for exc_class, (status_code, log_level) in EXCEPTION_CONFIG.items():
-        
-        async def create_handler(exc_type, code, level):
-            async def handler(request: Request, exc: Exception) -> JSONResponse:
-                log_func = getattr(logger, level)
-                log_func(f"{exc_type.__name__}: {exc}")
-                
-                # Use generic message for DatabaseError to avoid exposing internals
-                message = "A database error occurred" if exc_type == DatabaseError else str(exc)
-                
-                return JSONResponse(status_code=code, content={"message": message})
-            return handler
-        
         app.add_exception_handler(exc_class, create_handler(exc_class, status_code, log_level))

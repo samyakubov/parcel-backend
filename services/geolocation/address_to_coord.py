@@ -1,11 +1,9 @@
-import ssl
-import certifi
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut
-from geopy.geocoders import Nominatim
 
 from exceptions.geolocation_exceptions import GeolocationError
 from logger_config import logger
 from pydantic_models import Coordinates
+from services.geolocation.geolocation_helper import get_geolocator
 
 
 def address_to_coord(address: str) -> Coordinates | None:
@@ -26,9 +24,7 @@ def address_to_coord(address: str) -> Coordinates | None:
         logger.warning("No address was provided for geocoding.")
         return None
     try:
-        ctx = ssl.create_default_context(cafile=certifi.where())
-
-        geolocator = Nominatim(user_agent="parcel", scheme="https", timeout=10, ssl_context=ctx)
+        geolocator = get_geolocator()
 
         location = geolocator.geocode(address)
 
@@ -42,12 +38,6 @@ def address_to_coord(address: str) -> Coordinates | None:
             return None
 
     except GeocoderTimedOut as e:
-        error_msg = str(e)
-        if "503" in error_msg or "Service Unavailable" in error_msg:
-            logger.warning(
-                f"Geocoding service is temporarily unavailable for address: '{address}'. Returning None instead of raising error."
-            )
-            return None
         logger.error(f"The geocoding service timed out while processing address: '{address}'.", exc_info=True)
         raise GeolocationError(f"Geocoding service timed out for address: {address}") from e
     except GeocoderServiceError as e:

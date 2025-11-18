@@ -1,14 +1,11 @@
-import ssl
-
-import certifi
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut
-from geopy.geocoders import Nominatim
 
 from exceptions.geolocation_exceptions import (
     AddressNotInNewYorkError,
     GeolocationError,
 )
 from logger_config import logger
+from services.geolocation.geolocation_helper import get_geolocator
 
 
 def coord_to_address(latitude: float, longitude: float) -> dict[str, str] | None:
@@ -31,9 +28,7 @@ def coord_to_address(latitude: float, longitude: float) -> dict[str, str] | None
         logger.warning("Latitude and/or longitude were not provided for reverse geocoding.")
         return None
     try:
-        ctx = ssl.create_default_context(cafile=certifi.where())
-
-        geolocator = Nominatim(user_agent="parcel", scheme="https", timeout=10, ssl_context=ctx)
+        geolocator = get_geolocator()
 
         location = geolocator.reverse((latitude, longitude))
         if not location:
