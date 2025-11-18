@@ -1,4 +1,3 @@
-import os
 from fastapi import APIRouter, Depends, Header
 from database_connector import DatabaseConnector, get_db
 from endpoint_handlers.api_keys.create_key import create_key
@@ -20,12 +19,12 @@ from pydantic_models import (
 
 api_key_routes = APIRouter(prefix="/api-keys")
 
-@api_key_routes.get("/create-key/username={username}", dependencies=[Depends(verify_admin_key)])
-def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
+@api_key_routes.get("/create-key/name={name}", dependencies=[Depends(verify_admin_key)])
+def create_api_key(name: str, db: DatabaseConnector = Depends(get_db)) -> CreateAPIKeyResponse:
     """Creates a new API key.
 
     Args:
-        username (str): The name of the user to create the key for.
+        name (str): The name of the user to create the key for.
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Raises:
@@ -34,7 +33,7 @@ def create_api_key(username: str, db: DatabaseConnector = Depends(get_db)) -> Cr
     Returns:
         CreateAPIKeyResponse: The new API key details.
     """
-    key_config = create_key(username, db=db)
+    key_config = create_key(name, db=db)
 
     return CreateAPIKeyResponse(
         id=key_config.id,

@@ -9,11 +9,11 @@ from logger_config import logger
 admin_routes = APIRouter(prefix="/admin")
 
 @admin_routes.post("/authenticate")
-def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> JSONResponse:
+def verify_admin_key(password: str = Header(..., alias="X-API-Key")) -> JSONResponse:
     """Verifies the request is using the admin API key.
 
     Args:
-        api_key (str, optional): The API key from the "X-API-Key" header.
+        password (str, optional): The API key from the "X-API-Key" header.
             Defaults to Header(..., alias="X-API-Key").
 
     Raises:
@@ -26,7 +26,7 @@ def verify_admin_key(api_key: str = Header(..., alias="X-API-Key")) -> JSONRespo
         logger.error("Admin password not configured")
         raise MissingAdminKeyError
 
-    if api_key != admin_key:
+    if password != admin_key:
         logger.error("Invalid admin password")
         raise InvalidAdminKeyError
 
