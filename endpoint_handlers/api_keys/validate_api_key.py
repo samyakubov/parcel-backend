@@ -24,7 +24,7 @@ async def validate_api_key(
     # Check if API key is provided
     if not x_api_key:
         logger.error("Authentication failed: Missing API key")
-        raise MissingApiKeyError
+        raise MissingApiKeyError("API key is required")
 
     query = """
             SELECT id, key, name, enabled, created_at, updated_at, last_used_at
@@ -38,9 +38,9 @@ async def validate_api_key(
     if not is_valid_key:
         # Log authentication failure with partial key (first 8 chars)
         logger.error(f"Authentication failed: Invalid API key ({partial_key}...)")
-        raise InvalidApiKeyError
+        raise InvalidApiKeyError("Invalid or disabled API key")
 
     # Update last_used_at timestamp
     update_last_used(x_api_key, db=db)
 
-    logger.info("Authentication successful with given Key")
+    logger.info("Authentication successful with given api key \n")

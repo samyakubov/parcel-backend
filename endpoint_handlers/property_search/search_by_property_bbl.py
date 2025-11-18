@@ -65,7 +65,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
 
         if records_df.empty:
             logger.warning(f"No records found for BBL: '{bbl}'")
-            raise BBLNotFoundError(bbl)
+            raise BBLNotFoundError(f"No records found for BBL: {bbl}")
 
         prop_type = records_df.iloc[0].prop_type
         logger.info(f"Found {len(records_df)} records for BBL '{bbl}' with property type '{prop_type}'.")

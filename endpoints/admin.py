@@ -24,10 +24,10 @@ def verify_admin_key(password: str = Header(..., alias="X-API-Key")) -> JSONResp
 
     if not admin_key:
         logger.error("Admin password not configured")
-        raise MissingAdminKeyError
+        raise MissingAdminKeyError("Admin password not configured")
 
     if password != admin_key:
         logger.error("Invalid admin password")
-        raise InvalidAdminKeyError
+        raise InvalidAdminKeyError("Invalid admin password")
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "" })

@@ -88,7 +88,7 @@ def delete_api_key(key_id: str, db: DatabaseConnector = Depends(get_db)) -> Mess
     success = delete_key(int(key_id), db=db)
 
     if not success:
-        raise FailedToDeleteApiKeyError
+        raise FailedToDeleteApiKeyError("Failed to delete API key")
 
     return MessageResponse(message="API key deleted successfully")
 
@@ -114,11 +114,11 @@ def update_api_key(
         MessageResponse: A message indicating the result of the update.
     """
     if request.name is None and request.enabled is None:
-        raise InvalidUpdateError
+        raise InvalidUpdateError("At least one field (name or enabled) must be provided")
 
     success = update_key(key_id=key_id, db=db, name=request.name, enabled=request.enabled)
 
     if not success:
-        raise APIKeyNotFoundError
+        raise APIKeyNotFoundError(f"API key with ID {key_id} not found")
 
     return MessageResponse(message="API key updated successfully")

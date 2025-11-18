@@ -1,5 +1,4 @@
 import ssl
-
 import certifi
 from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 from geopy.geocoders import Nominatim
@@ -35,7 +34,7 @@ def address_to_coord(address: str) -> Coordinates | None:
 
         if location:
             logger.info(
-                f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})"
+                f"Successfully geocoded address '{address}' to coordinates: ({location.latitude}, {location.longitude})\n"
             )
             return Coordinates(latitude=location.latitude, longitude=location.longitude)
         else:

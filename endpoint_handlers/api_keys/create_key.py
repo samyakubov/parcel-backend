@@ -36,7 +36,7 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
         result = db.execute(query, [api_key, name])
         if not result:
             logger.error(f"Database insertion failed when creating API key for name: '{name}'")
-            raise FailedToCreateApiKeyError
+            raise FailedToCreateApiKeyError("Failed to create API key in database")
 
         row = result[0]
         key_config = APIKeyConfig(
@@ -50,6 +50,8 @@ def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:
         )
         logger.info(f"Successfully created API key with ID {key_config.id} and name '{key_config.name}'.")
         return key_config
+    except FailedToCreateApiKeyError:
+        raise
     except Exception as e:
         logger.error(f"An unexpected error occurred while creating an API key for name '{name}': {e}", exc_info=True)
-        raise FailedToCreateApiKeyError from e
+        raise FailedToCreateApiKeyError(f"Unexpected error creating API key: {str(e)}") from e
