@@ -23,6 +23,10 @@ from exceptions.property_search_exceptions import (
     InvalidAddressError,
     InvalidBBLError,
 )
+from exceptions.party_search_exceptions import (
+    InvalidPartyNameError,
+    PartyNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +37,7 @@ EXCEPTION_CONFIG = {
     InvalidAddressError: (status.HTTP_400_BAD_REQUEST, "warning"),
     InvalidUpdateError: (status.HTTP_400_BAD_REQUEST, "warning"),
     AddressNotInNewYorkError: (status.HTTP_400_BAD_REQUEST, "warning"),
+    InvalidPartyNameError: (status.HTTP_400_BAD_REQUEST, "warning"),
     
     # 401 Unauthorized - Authentication errors
     MissingApiKeyError: (status.HTTP_401_UNAUTHORIZED, "warning"),
@@ -45,6 +50,7 @@ EXCEPTION_CONFIG = {
     BBLNotFoundError: (status.HTTP_404_NOT_FOUND, "warning"),
     AddressNotFoundError: (status.HTTP_404_NOT_FOUND, "warning"),
     APIKeyNotFoundError: (status.HTTP_404_NOT_FOUND, "warning"),
+    PartyNotFoundError: (status.HTTP_404_NOT_FOUND, "warning"),
     
     # 500 Internal Server Error - Server errors
     MissingAdminKeyError: (status.HTTP_500_INTERNAL_SERVER_ERROR, "error"),
@@ -79,7 +85,6 @@ def register_exception_handlers(app) -> None:
         logger.warning(f"HTTPException: {exc.detail}")
         return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
 
-    # Register all custom exceptions with a single handler
     def create_handler(exc_type, code, level):
         async def handler(request: Request, exc: Exception) -> JSONResponse:
             log_func = getattr(logger, level)

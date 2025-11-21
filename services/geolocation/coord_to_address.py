@@ -35,7 +35,6 @@ def coord_to_address(latitude: float, longitude: float) -> dict[str, str] | None
             logger.warning(f"Could not find address for coordinates: ({latitude}, {longitude})")
             return None
 
-        # Check if "New York" appears anywhere in the address parts (more flexible)
         address_lower = location.address.lower()
         is_in_ny = "new york" in address_lower or ", ny" in address_lower
         

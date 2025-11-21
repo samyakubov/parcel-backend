@@ -290,3 +290,9 @@ class PropertyDetailsResponse(BaseModel):
     complaints: list[Complaint]
     zoning: Zoning | None = None
     coordinates: Coordinates | None = None
+
+
+class PartySearchResponse(BaseModel):
+    """Response model for searching by party name - returns all properties associated with the person."""
+
+    properties: list[PropertyDetailsResponse]

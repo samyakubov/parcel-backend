@@ -18,7 +18,6 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame | list, owners_list
     """
     owners_df = pd.DataFrame({"owner_full_name": owners_list})
 
-    # Handle case when phone_numbers is an empty list
     if isinstance(phone_numbers, list) or phone_numbers.empty:
         owners_df["owners_phone"] = "No Phone Number"
     else:

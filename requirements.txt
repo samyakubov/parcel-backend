@@ -4,5 +4,4 @@ python-dotenv
 duckdb
 geopy
 certifi
-pandasr
-uff
+pandas
