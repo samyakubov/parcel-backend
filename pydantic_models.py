@@ -325,11 +325,9 @@ class PersonProfile(BaseModel):
     identifier: str  # Unique address or "Unknown-{index}"
     primary_address: str | None = None  # The address used to identify this person
     record_count: int  # Total number of records for this person
-    records: list[PropertyRecord] = []
-    violations: list[Violation] = []
     contact_info: PartyContact | None = None
-    properties: list[PropertyOwnership] = []
-    co_parties: list[CoParty] = []
+    properties: list[PropertyDetailsResponse] = []  # Full property details for each BBL
+    co_parties: list[CoParty] = []  # Only co-parties from buyer records
 
 
 class PartySearchResponse(BaseModel):
