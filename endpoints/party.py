@@ -9,12 +9,12 @@ party_routes = APIRouter(prefix="/party")
 
 
 @party_routes.get(
-    "/search",
+    "/party_search/first_name={first_name}/last_name={last_name}",
     dependencies=[Depends(validate_api_key)],
     response_model=PartySearchResponse,
 )
 def search_by_name(
-    last_name: str, first_name: str, db: DatabaseConnector = Depends(get_db)
+    first_name: str, last_name: str, db: DatabaseConnector = Depends(get_db)
 ) -> PartySearchResponse:
     """Searches for ACRIS records by party name.
 
@@ -26,4 +26,4 @@ def search_by_name(
     Returns:
         PartySearchResponse: A response object containing the search results.
     """
-    return search_by_party_name(last_name, first_name, db)
+    return search_by_party_name(first_name, last_name, db)

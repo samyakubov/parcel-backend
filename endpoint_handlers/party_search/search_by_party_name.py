@@ -8,12 +8,12 @@ from pydantic_models import PartySearchResponse
 from endpoint_handlers.property_search.search_by_property_bbl import search_by_property_bbl
 
 
-def search_by_party_name(last_name: str, first_name: str, db: DatabaseConnector) -> PartySearchResponse:
+def search_by_party_name(first_name: str, last_name: str, db: DatabaseConnector) -> PartySearchResponse:
     """Searches for all properties currently associated with a party by name.
 
     Args:
-        last_name (str): The last name of the party.
         first_name (str): The first name of the party.
+        last_name (str): The last name of the party.
         db (DatabaseConnector): The database connector instance.
 
     Returns:
