@@ -62,7 +62,6 @@ def search_by_party_name(last_name: str, first_name: str, db: DatabaseConnector)
         logger.info(f"Successfully fetched {len(properties)} properties")
 
         return PartySearchResponse(
-            total_properties_found=len(properties),
             properties=properties
         )
 

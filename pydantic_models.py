@@ -295,5 +295,4 @@ class PropertyDetailsResponse(BaseModel):
 class PartySearchResponse(BaseModel):
     """Response model for searching by party name - returns all properties associated with the person."""
 
-    total_properties_found: int
     properties: list[PropertyDetailsResponse]
