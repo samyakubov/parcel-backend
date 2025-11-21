@@ -290,3 +290,50 @@ class PropertyDetailsResponse(BaseModel):
     complaints: list[Complaint]
     zoning: Zoning | None = None
     coordinates: Coordinates | None = None
+
+
+class PartyContact(BaseModel):
+    """Contact information for a party."""
+
+    addresses: list[str] = []  # Unique addresses from ACRIS records
+    phone_numbers: list[str] = []  # From DOB jobs
+    business_names: list[str] = []  # From DOB jobs
+
+
+class PropertyOwnership(BaseModel):
+    """Property ownership record for a party."""
+
+    bbl: str
+    address: str
+    role: str  # GRANTOR/SELLER, GRANTEE/BUYER, etc.
+    doc_type: str  # DEED, MORTGAGE, etc.
+    amount: int | None = None
+    date: str  # record_filed date
+
+
+class CoParty(BaseModel):
+    """Co-party information (people on same documents)."""
+
+    name: str
+    shared_document_count: int
+    relationship_types: list[str] = []
+
+
+class PersonProfile(BaseModel):
+    """Profile for a distinct individual (grouped by address)."""
+
+    identifier: str  # Unique address or "Unknown-{index}"
+    primary_address: str | None = None  # The address used to identify this person
+    record_count: int  # Total number of records for this person
+    records: list[PropertyRecord] = []
+    violations: list[Violation] = []
+    contact_info: PartyContact | None = None
+    properties: list[PropertyOwnership] = []
+    co_parties: list[CoParty] = []
+
+
+class PartySearchResponse(BaseModel):
+    """Response model for searching by party name."""
+
+    total_persons_found: int
+    persons: list[PersonProfile]
