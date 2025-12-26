@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -9,6 +8,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from endpoints.admin import admin_routes
 from endpoints.api_keys import api_key_routes
+from endpoints.database import database_routes
 from endpoints.party import party_routes
 from endpoints.property import property_routes
 from exception_handlers import register_exception_handlers
@@ -47,7 +47,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for liveness probe"""
+    return {"status": "healthy"}
+
 app.include_router(property_routes)
 app.include_router(party_routes)
 app.include_router(api_key_routes)
 app.include_router(admin_routes)
+app.include_router(database_routes)
