@@ -61,9 +61,7 @@ def search_by_party_name(first_name: str, last_name: str, db: DatabaseConnector)
 
         logger.info(f"Successfully fetched {len(properties)} properties")
 
-        return PartySearchResponse(
-            properties=properties
-        )
+        return PartySearchResponse(properties=properties)
 
     except (InvalidPartyNameError, PartyNotFoundError):
         raise
