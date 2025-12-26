@@ -279,10 +279,16 @@ class Coordinates(BaseModel):
     longitude: float
 
 
+class MortgageRecord(BaseModel):
+    lender: str
+    borrower: str
+    amount: float
+
+
 class PropertyDetailsResponse(BaseModel):
     """Response model for a single property's details."""
-
     last_sold: LastSold | None = None
+    mortgage: MortgageRecord | None = None
     owners: Owners
     records: list[PropertyRecord]
     job_filings: list[JobFiled]
