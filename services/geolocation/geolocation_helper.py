@@ -1,13 +1,18 @@
-import ssl
-import certifi
-from geopy.geocoders import Nominatim
+import os
+from geopy.geocoders import MapBox
 
 
-def get_geolocator() -> Nominatim:
-    """Creates a configured Nominatim geolocator with SSL context.
-    
+def get_geolocator() -> MapBox:
+    """Creates a configured MapBox geolocator.
+
     Returns:
-        Nominatim: A configured geolocator instance.
+        MapBox: A configured geolocator instance.
+    
+    Raises:
+        ValueError: If MAPBOX_API_KEY is not set in environment variables.
     """
-    ctx = ssl.create_default_context(cafile=certifi.where())
-    return Nominatim(user_agent="parcel", scheme="https", timeout=10, ssl_context=ctx)
+    api_key = os.getenv("MAPBOX_API_KEY")
+    if not api_key:
+        raise ValueError("MAPBOX_API_KEY environment variable is not set")
+        
+    return MapBox(api_key=api_key, user_agent="parcel", scheme="https", timeout=10)
