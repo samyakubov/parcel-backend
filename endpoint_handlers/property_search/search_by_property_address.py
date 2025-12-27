@@ -101,7 +101,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             logger.warning(f"Failed to get coordinates for address '{address}': {e}")
             coordinates = None
 
-        last_sold= get_last_sold(bbl, db) if prop_type not in coop_property_types else None
+        last_sold = get_last_sold(bbl, db) if prop_type not in coop_property_types else None
         return PropertyDetailsResponse(
             last_sold= last_sold,
             owners=owners,

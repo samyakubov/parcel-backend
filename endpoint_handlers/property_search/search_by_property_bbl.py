@@ -17,6 +17,7 @@ from endpoint_handlers.property_search.helper_functions.get_job_filings import (
 from endpoint_handlers.property_search.helper_functions.get_last_sold import (
     get_last_sold,
 )
+from endpoint_handlers.property_search.helper_functions.get_mortgage import get_mortgage
 from endpoint_handlers.property_search.helper_functions.get_previous_owners import (
     get_previous_home_owners,
 )
@@ -99,16 +100,16 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         except Exception as e:
             logger.warning(f"Failed to get coordinates for BBL '{bbl}': {e}")
             coordinates = None
+        last_sold = get_last_sold(bbl, db) if prop_type not in coop_property_types else None
 
         return PropertyDetailsResponse(
             last_sold = get_last_sold(bbl, db) if prop_type not in coop_property_types or should_get_last_sold_for_buildings else None,
             owners=owners,
+            mortgage=get_mortgage(bbl, db, last_sold),
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, db),
             violations=get_violations(bbl, db),
-            complaints=get_complaints(
-                records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, db
-            ),
+            complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, db),
             zoning=get_zoning(bbl, db),
             coordinates=coordinates,
         )
