@@ -49,7 +49,8 @@ def coord_to_address(latitude: float, longitude: float) -> dict[str, str] | None
         logger.info(
             f"Successfully reverse geocoded coordinates ({latitude}, {longitude}) to address: '{formatted_address}'"
         )
-        return {"address": formatted_address}
+
+        return {"address": formatted_address.split(", ")[0]}
 
     except AddressNotInNewYorkError:
         raise
