@@ -57,7 +57,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             f"--------------------------Starting property search for address: '{address}'--------------------------"
         )
         records_df = db.execute_df(
-            "SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid",
+            "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.search_prop_address = ? ORDER BY a.documentid",
             [address.upper()],
         )
         records_df = records_df.drop(columns=["search_prop_address"])
@@ -70,7 +70,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             parts = address.strip().split(" ", 1)
             house_number, street = parts
             records_df = db.execute_df(
-                "SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid",
+                "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
                 [house_number, f"{street.replace(' ', '%').upper()}%"],
             )
             if records_df.empty:
