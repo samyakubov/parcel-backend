@@ -121,17 +121,17 @@ def _get_latest_deed_record(bbl: str, db: DatabaseConnector) -> LastSold | None:
     logger.info(f"Querying for latest deed record for BBL: {bbl}")
     deeds_df = db.execute_df(
         """
-                             SELECT
-                                 amount AS last_sold_price,
-                                 record_filed AS sale_date,
-                                 party_name AS deed_party_name
-                             FROM aggregated_acris_records
-                             WHERE bbl = ?
-                               AND doc_type = 'DEED'
-                               AND amount > 0
-                               AND partytype_desc = 'GRANTEE/BUYER'
-                             ORDER BY record_filed DESC
-                             """,
+                 SELECT
+                     amount AS last_sold_price,
+                     record_filed AS sale_date,
+                     party_name AS deed_party_name
+                 FROM aggregated_acris_records
+                 WHERE bbl = ?
+                   AND doc_type = 'DEED'
+                   AND amount > 0
+                   AND partytype_desc = 'GRANTEE/BUYER'
+                 ORDER BY record_filed DESC
+                 """,
         [bbl],
     )
     if deeds_df.empty:

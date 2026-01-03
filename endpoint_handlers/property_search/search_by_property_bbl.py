@@ -54,10 +54,9 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
     if not bbl:
         logger.warning("An attempt was made to search for a property without providing a BBL.")
         raise InvalidBBLError("BBL cannot be empty")
-
     try:
         logger.info(f"Starting property search for BBL: '{bbl}'")
-        records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
+        records_df = db.execute_df("SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.bbl = ? ORDER BY a.documentid", [bbl])
         records_df = records_df.drop(columns=["search_prop_address"])
         current_owner_data = []
         should_get_last_sold_for_buildings = False

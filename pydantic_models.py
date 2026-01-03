@@ -80,6 +80,41 @@ class PropertyRecord(BaseModel):
     party_zip: str | None = None
     doc_type: str | None = None
     record_filed: str
+    school_dist: int | None = None
+    council: int | None = None
+    zipcode: str | None = None
+    police_prct: str | None = None
+    land_use: int | None = None
+    owner_type: str | None = None
+    owner_name: str | None = None
+    lot_area: int | None = None
+    bldg_area: int | None = None
+    com_area: int | None = None
+    res_area: int | None = None
+    office_area: int | None = None
+    retail_area: int | None = None
+    garage_area: int | None = None
+    strge_area: int | None = None
+    factry_area: int | None = None
+    other_area: int | None = None
+    area_source: str | None = None
+    num_bldgs: int | None = None
+    num_floors: float | None = None
+    units_res: int | None = None
+    units_total: int | None = None
+    lot_front: float | None = None
+    lot_depth: float | None = None
+    bldg_front: float | None = None
+    bldg_depth: float | None = None
+    ext: str | None = None
+    prox_code: str | None = None
+    irr_lot_code: str | None = None
+    lot_type: str | None = None
+    bsmt_code: str | None = None
+    assess_land: int | None = None
+    assess_tot: int | None = None
+    exempt_tot: int | None = None
+    year_built: int | None = None
 
     @field_validator("record_filed", mode="before")
     @classmethod
