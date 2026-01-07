@@ -335,5 +335,13 @@ class PropertyDetailsResponse(BaseModel):
 
 class PartySearchResponse(BaseModel):
     """Response model for searching by party name - returns all properties associated with the person."""
-
     properties: list[PropertyDetailsResponse]
+
+class AskRequest(BaseModel):
+    """Request model for asking the AI a question."""
+    question: str
+
+
+class AskResponse(BaseModel):
+    """Response model for the AI's answer."""
+    response: str

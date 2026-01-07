@@ -11,6 +11,7 @@ from endpoints.api_keys import api_key_routes
 from endpoints.database import database_routes
 from endpoints.party import party_routes
 from endpoints.property import property_routes
+from endpoints.ai import ai_routes
 from exception_handlers import register_exception_handlers
 
 load_dotenv()
@@ -57,3 +58,4 @@ app.include_router(party_routes)
 app.include_router(api_key_routes)
 app.include_router(admin_routes)
 app.include_router(database_routes)
+app.include_router(ai_routes)
