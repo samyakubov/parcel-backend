@@ -17,36 +17,32 @@ ai_routes = APIRouter(prefix="/ai")
 
 def get_tools(db: DatabaseConnector):
     @tool
-    def lookup_property_by_address(address: str) -> str:
+    def lookup_property_by_address(address: str):
         """
-        Search for property details using its address. 
+        Search for property details using its address.
         Useful for finding owners, violations, zoning, and other usage details for a specific address.
         """
         try:
             result = search_by_property_address(address, db)
-            
+
             # Create a summary to avoid hitting token limits with large history
             summary = {
-                "address": address,
                 "owners": result.owners.model_dump(),
                 "last_sold": result.last_sold.model_dump() if result.last_sold else None,
                 "zoning": result.zoning.model_dump() if result.zoning else None,
-                "coordinates": result.coordinates.model_dump() if result.coordinates else None,
                 "mortgage": result.mortgage.model_dump() if result.mortgage else None,
                 "violation_count": len(result.violations),
                 "complaint_count": len(result.complaints),
-                "record_count": len(result.records),
                 "job_filing_count": len(result.job_filings),
-                # Include latest 5 records/violations if needed, or just keep it high level
                 "latest_violation": result.violations[0].model_dump() if result.violations else None,
                 "latest_record": result.records[0].model_dump() if result.records else None,
             }
-            return str(summary)
+            return (str(summary), result)
         except Exception as e:
-            return f"Error searching for property: {str(e)}"
+            return (f"Error searching for property: {str(e)}", None)
 
     @tool
-    def lookup_property_by_bbl(bbl: str) -> str:
+    def lookup_property_by_bbl(bbl: str):
         """
         Search for property details using its BBL (Borough-Block-Lot).
         BBL is a unique identifier URL for NYC properties. Format is usually a 10-digit string.
@@ -56,23 +52,19 @@ def get_tools(db: DatabaseConnector):
             result = search_by_property_bbl(bbl, db)
             # Reuse similar summary logic
             summary = {
-                "bbl": bbl,
                 "owners": result.owners.model_dump(),
                 "last_sold": result.last_sold.model_dump() if result.last_sold else None,
                 "zoning": result.zoning.model_dump() if result.zoning else None,
-                "coordinates": result.coordinates.model_dump() if result.coordinates else None,
                 "mortgage": result.mortgage.model_dump() if result.mortgage else None,
                 "violation_count": len(result.violations),
                 "complaint_count": len(result.complaints),
-                "record_count": len(result.records),
                 "job_filing_count": len(result.job_filings),
                 "latest_violation": result.violations[0].model_dump() if result.violations else None,
                 "latest_record": result.records[0].model_dump() if result.records else None,
             }
-            return str(summary)
+            return (str(summary), result)
         except Exception as e:
-            return f"Error searching for property by BBL: {str(e)}"
-
+            return (f"Error searching for property by BBL: {str(e)}", None)
 
     return [lookup_property_by_address, lookup_property_by_bbl]
 
@@ -94,25 +86,39 @@ async def ask_ai(request: AskRequest, db: DatabaseConnector = Depends(get_db)):
             HumanMessage(content=request.question),
         ]
 
+        # Store all tool outputs
+        property_data = None
+
         # Simple tool calling loop
         response = llm_with_tools.invoke(messages)
-        
+
         # Check if the model decided to call a tool
         if response.tool_calls:
             messages.append(response) # Add the assistant's message with tool call
             for tool_call in response.tool_calls:
                 selected_tool = {t.name: t for t in tools}[tool_call["name"]]
                 tool_output = selected_tool.invoke(tool_call["args"])
-                
-                # Append tool output to messages
-                messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-            
+
+                # tool_output is now a tuple: (summary_string, result_object)
+                summary_for_llm, full_result = tool_output
+
+                # Store the full result for the response
+                property_data = full_result
+
+                # Append only the summary to messages for the LLM
+                messages.append(ToolMessage(summary_for_llm, tool_call_id=tool_call["id"]))
+
             # Get final response after tool execution
             final_response = llm_with_tools.invoke(messages)
-            return AskResponse(response=final_response.content)
-        
-        # If no tool called, just return the content
-        return AskResponse(response=response.content)
+            return AskResponse(
+                response=final_response.content,
+                propertyData=property_data
+            )
+
+        return AskResponse(
+            response=response.content,
+            propertyData=None
+        )
 
     except Exception as e:
         logger.error(f"Error in /ai/ask: {e}", exc_info=True)

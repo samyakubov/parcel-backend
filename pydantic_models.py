@@ -58,6 +58,7 @@ class MessageResponse(BaseModel):
 
 
 class PropertyRecord(BaseModel):
+    """model for a raw property record"""
     documentid: str
     bbl: str
     amount: float
@@ -345,3 +346,4 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     """Response model for the AI's answer."""
     response: str
+    propertyData: PropertyDetailsResponse | None = None
