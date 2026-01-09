@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends
+
 from database_connector import DatabaseConnector, get_db
 from endpoint_handlers.api_keys.create_key import create_key
 from endpoint_handlers.api_keys.delete_key import delete_key

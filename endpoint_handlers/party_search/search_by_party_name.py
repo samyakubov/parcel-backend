@@ -1,11 +1,11 @@
 from database_connector import DatabaseConnector
+from endpoint_handlers.property_search.search_by_property_bbl import search_by_property_bbl
 from exceptions.party_search_exceptions import (
     InvalidPartyNameError,
     PartyNotFoundError,
 )
 from logger_config import logger
 from pydantic_models import PartySearchResponse
-from endpoint_handlers.property_search.search_by_property_bbl import search_by_property_bbl
 
 
 def search_by_party_name(first_name: str, last_name: str, db: DatabaseConnector) -> PartySearchResponse:

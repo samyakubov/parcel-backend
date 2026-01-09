@@ -7,6 +7,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.cors import CORSMiddleware
 
 from endpoints.admin import admin_routes
+from endpoints.ai import ai_routes
 from endpoints.api_keys import api_key_routes
 from endpoints.database import database_routes
 from endpoints.party import party_routes
@@ -57,3 +58,4 @@ app.include_router(party_routes)
 app.include_router(api_key_routes)
 app.include_router(admin_routes)
 app.include_router(database_routes)
+app.include_router(ai_routes)

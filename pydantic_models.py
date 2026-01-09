@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
@@ -58,6 +59,7 @@ class MessageResponse(BaseModel):
 
 
 class PropertyRecord(BaseModel):
+    """model for a raw property record"""
     documentid: str
     bbl: str
     amount: float
@@ -335,5 +337,14 @@ class PropertyDetailsResponse(BaseModel):
 
 class PartySearchResponse(BaseModel):
     """Response model for searching by party name - returns all properties associated with the person."""
-
     properties: list[PropertyDetailsResponse]
+
+class AskRequest(BaseModel):
+    """Request model for asking the AI a question."""
+    question: str
+
+
+class AskResponse(BaseModel):
+    """Response model for the AI's answer."""
+    response: str
+    property_data: PropertyDetailsResponse | None = None

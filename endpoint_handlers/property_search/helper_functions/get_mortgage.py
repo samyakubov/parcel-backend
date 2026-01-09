@@ -1,6 +1,7 @@
 from datetime import datetime
+
 from database_connector import DatabaseConnector
-from pydantic_models import MortgageRecord, LastSold
+from pydantic_models import LastSold, MortgageRecord
 
 
 def get_mortgage(
@@ -63,10 +64,10 @@ def get_mortgage(
                 sale_date = sale_date_str
             else:
                 sale_date = datetime.fromisoformat(str(sale_date_str).replace("Z", "+00:00"))
-            
+
             near_sale_docs = []
             other_docs = []
-            
+
             for doc_id in sorted_doc_ids:
                 doc_date_str = grouped_records[doc_id][0]["record_filed"]
                 if isinstance(doc_date_str, datetime):
@@ -75,30 +76,30 @@ def get_mortgage(
                     doc_date = datetime.fromisoformat(str(doc_date_str).replace("Z", "+00:00"))
 
                 diff_days = abs((doc_date - sale_date).total_seconds()) / (60 * 60 * 24)
-                
+
                 if diff_days <= 14:
                     near_sale_docs.append(doc_id)
                 else:
                     other_docs.append(doc_id)
-            
+
             sorted_doc_ids = near_sale_docs + other_docs
-            
+
         except (ValueError, TypeError):
              pass
 
     selected_mortgage = None
-    
+
     for doc_id in sorted_doc_ids:
         parties = grouped_records[doc_id]
-        
+
         lenders = [p["party_name"] for p in parties if p.get("partytype_desc") == "MORTGAGEE/LENDER"]
         borrowers = [p["party_name"] for p in parties if p.get("partytype_desc") == "MORTGAGOR/BORROWER"]
-        
+
         if lenders and borrowers:
 
             lender_name = " & ".join(sorted(list(set(lenders))))
             borrower_name = " & ".join(sorted(list(set(borrowers))))
-            
+
             amount_val = parties[0].get("amount", 0.0)
             try:
                 amount = float(amount_val)
@@ -107,5 +108,5 @@ def get_mortgage(
 
             selected_mortgage = MortgageRecord(lender=lender_name, borrower=borrower_name, amount=amount)
             break
-            
+
     return selected_mortgage

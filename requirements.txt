@@ -6,3 +6,6 @@ geopy
 certifi
 pandas
 slowapi
+langchain
+langchain-openai
+openai
