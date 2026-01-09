@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, List
 
 
 @dataclass
@@ -318,6 +318,7 @@ class Coordinates(BaseModel):
 
 
 class MortgageRecord(BaseModel):
+    """Represents a mortgage record."""
     lender: str
     borrower: str
     amount: float
@@ -340,6 +341,7 @@ class PartySearchResponse(BaseModel):
     """Response model for searching by party name - returns all properties associated with the person."""
     properties: list[PropertyDetailsResponse]
 
+
 class AskRequest(BaseModel):
     """Request model for asking the AI a question."""
     question: str
@@ -351,25 +353,26 @@ class AskResponse(BaseModel):
     property_data: PropertyDetailsResponse | None = None
 
 class CensusGeoCodeResponse(TypedDict):
-    lat: float
-    lon: float
-    matchedAddress: str
+    """
+    Response from the Census Bureau's geocoding API containing geographic identifiers.
+    """
     tract: str
-    blockGroup: str
-    block: str
-    county: str
-    state: str
-    countyName: str
-    stateName: str
-    city: str
-    zip: str
-    congressionalDistrict: Optional[str]
+
+class RaceDemographic(BaseModel):
+    """
+    Demographic data for a single race or ethnicity category.
+    """
+    label: str
+    value: int
 
 
 class CensusDemographicData(TypedDict):
-    tractName: str
+    """
+    Demographic and economic data from the U.S. Census Bureau's American Community Survey (ACS).
+    """
     population: Optional[int]
     medianIncome: Optional[int]
     medianHomeValue: Optional[int]
     medianRent: Optional[int]
     medianAge: Optional[float]
+    raceDemographics: List[RaceDemographic]
