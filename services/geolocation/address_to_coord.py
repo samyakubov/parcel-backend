@@ -51,7 +51,8 @@ def address_to_coord(address: str) -> Coordinates | None:
                 return Coordinates(latitude=lat, longitude=lon)
             else:
                 logger.warning(
-                    f"Address '{address}' geocoded to coordinates ({lat}, {lon}) which are outside NYC bounds. Rejecting."
+                    f"Address '{address}' geocoded to coordinates ({lat}, {lon}) "
+                    f"which are outside NYC bounds. Rejecting."
                 )
                 return None
         else:

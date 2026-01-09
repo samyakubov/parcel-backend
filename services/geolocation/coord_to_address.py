@@ -9,7 +9,6 @@ from services.geolocation.address_to_coord import NYC_BOUNDS
 from services.geolocation.geolocation_helper import get_geolocator
 
 
-
 def is_in_nyc_bounds(latitude: float, longitude: float) -> bool:
     """
     Check if coordinates are within NYC geographic bounds.

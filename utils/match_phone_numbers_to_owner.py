@@ -21,7 +21,11 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame | list, owners_list
     if isinstance(phone_numbers, list) or phone_numbers.empty:
         owners_df["owners_phone"] = "No Phone Number"
     else:
-        merged_df = owners_df.merge(phone_numbers[["owner_full_name", "owners_phone"]], on="owner_full_name", how="left")
+        merged_df = owners_df.merge(
+            phone_numbers[["owner_full_name", "owners_phone"]],
+            on="owner_full_name",
+            how="left"
+        )
         owners_df = merged_df
         owners_df["owners_phone"] = owners_df["owners_phone"].fillna("No Phone Number")
 

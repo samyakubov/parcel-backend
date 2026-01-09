@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
@@ -346,4 +347,4 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     """Response model for the AI's answer."""
     response: str
-    propertyData: PropertyDetailsResponse | None = None
+    property_data: PropertyDetailsResponse | None = None
