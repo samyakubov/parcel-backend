@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
+from typing import Optional, TypedDict
 
 
 @dataclass
@@ -348,3 +349,27 @@ class AskResponse(BaseModel):
     """Response model for the AI's answer."""
     response: str
     property_data: PropertyDetailsResponse | None = None
+
+class CensusGeoCodeResponse(TypedDict):
+    lat: float
+    lon: float
+    matchedAddress: str
+    tract: str
+    blockGroup: str
+    block: str
+    county: str
+    state: str
+    countyName: str
+    stateName: str
+    city: str
+    zip: str
+    congressionalDistrict: Optional[str]
+
+
+class CensusDemographicData(TypedDict):
+    tractName: str
+    population: Optional[int]
+    medianIncome: Optional[int]
+    medianHomeValue: Optional[int]
+    medianRent: Optional[int]
+    medianAge: Optional[float]
