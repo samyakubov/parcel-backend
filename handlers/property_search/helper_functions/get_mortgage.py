@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from database_connector import DatabaseConnector
-from pydantic_models import LastSold, MortgageRecord
+from schemas import LastSold, MortgageRecord
 
 
 def get_mortgage(

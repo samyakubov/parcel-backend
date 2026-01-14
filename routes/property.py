@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
 
 from database_connector import DatabaseConnector, get_db
-from endpoint_handlers.api_keys.validate_api_key import validate_api_key
-from endpoint_handlers.property_search.search_by_property_address import (
+from handlers.api_keys.validate_api_key import validate_api_key
+from handlers.property_search.search_by_property_address import (
     search_by_property_address,
 )
-from endpoint_handlers.property_search.search_by_property_bbl import (
+from handlers.property_search.search_by_property_bbl import (
     search_by_property_bbl,
 )
-from pydantic_models import PropertyDetailsResponse
+from schemas import PropertyDetailsResponse
 from services.geolocation.coord_to_address import coord_to_address
 
 property_routes = APIRouter(prefix="/property")

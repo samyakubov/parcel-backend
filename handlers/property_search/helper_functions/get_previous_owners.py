@@ -1,5 +1,5 @@
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.helper_functions.get_phone_number_by_bbl import (
+from handlers.property_search.helper_functions.get_phone_number_by_bbl import (
     get_phone_number_by_bbl,
 )
 from logger_config import logger

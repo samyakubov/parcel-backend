@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic_models import PropertyDetailsResponse
+from schemas import PropertyDetailsResponse
 
 
 def create_summary_from_property_data(property_data: PropertyDetailsResponse) -> dict[str, Any]:

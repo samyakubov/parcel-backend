@@ -1,6 +1,6 @@
 import requests
 
-from pydantic_models import CensusGeoCodeResponse
+from schemas import CensusGeoCodeResponse
 
 
 def geocode_address(address: str) -> CensusGeoCodeResponse:

@@ -1,6 +1,6 @@
 from database_connector import DatabaseConnector
 from logger_config import logger
-from pydantic_models import Violation
+from schemas import Violation
 
 
 def get_violations(bbl: str, db: DatabaseConnector) -> list[Violation]:

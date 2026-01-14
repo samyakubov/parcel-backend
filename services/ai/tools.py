@@ -1,10 +1,10 @@
 from langchain_core.tools import tool
 
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.search_by_property_address import (
+from handlers.property_search.search_by_property_address import (
     search_by_property_address,
 )
-from endpoint_handlers.property_search.search_by_property_bbl import (
+from handlers.property_search.search_by_property_bbl import (
     search_by_property_bbl,
 )
 from services.ai.summarizer import create_summary_from_property_data

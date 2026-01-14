@@ -2,7 +2,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
 from database_connector import DatabaseConnector
-from pydantic_models import AskResponse
+from schemas import AskResponse
 from services.ai.tools import get_tools
 
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
 from database_connector import DatabaseConnector, get_db
-from endpoint_handlers.api_keys.validate_api_key import validate_api_key
-from endpoint_handlers.party_search.search_by_party_name import search_by_party_name
-from pydantic_models import PartySearchResponse
+from handlers.api_keys.validate_api_key import validate_api_key
+from handlers.party_search.search_by_party_name import search_by_party_name
+from schemas import PartySearchResponse
 
 party_routes = APIRouter(prefix="/party")
 
