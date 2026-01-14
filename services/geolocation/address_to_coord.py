@@ -2,7 +2,7 @@ from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 
 from exceptions.geolocation_exceptions import GeolocationError
 from logger_config import logger
-from pydantic_models import Coordinates
+from schemas import Coordinates
 from services.geolocation.geolocation_helper import get_geolocator
 
 NYC_BOUNDS = {

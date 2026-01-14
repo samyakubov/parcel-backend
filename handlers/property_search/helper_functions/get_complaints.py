@@ -1,11 +1,11 @@
 import pandas as pd
 
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import (
+from handlers.property_search.helper_functions.standardize_address_for_database import (
     standardize_address,
 )
 from logger_config import logger
-from pydantic_models import Complaint
+from schemas import Complaint
 
 
 def get_complaints(address: str, db: DatabaseConnector) -> list[Complaint]:

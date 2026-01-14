@@ -1,7 +1,7 @@
 from database_connector import DatabaseConnector
 from exceptions.property_search_exceptions import InvalidBBLError
 from logger_config import logger
-from pydantic_models import Zoning
+from schemas import Zoning
 
 
 def get_zoning(bbl: str, db: DatabaseConnector) -> Zoning | None:

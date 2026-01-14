@@ -1,6 +1,6 @@
 import os
 import requests
-from pydantic_models import CensusDemographicData, RaceDemographic
+from schemas import CensusDemographicData, RaceDemographic
 
 
 def get_census_data_handler(tract_id: str) -> CensusDemographicData:

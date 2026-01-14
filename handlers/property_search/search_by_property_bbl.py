@@ -1,31 +1,31 @@
 from database_connector import DatabaseConnector
-from endpoint_handlers.property_search.helper_functions.add_ordinal_to_street_number import (
+from handlers.property_search.helper_functions.add_ordinal_to_street_number import (
     add_ordinal_to_street_number,
 )
-from endpoint_handlers.property_search.helper_functions.get_building_shareholders import (
+from handlers.property_search.helper_functions.get_building_shareholders import (
     get_building_shareholders,
 )
-from endpoint_handlers.property_search.helper_functions.get_complaints import (
+from handlers.property_search.helper_functions.get_complaints import (
     get_complaints,
 )
-from endpoint_handlers.property_search.helper_functions.get_current_home_owner import (
+from handlers.property_search.helper_functions.get_current_home_owner import (
     get_current_home_owner,
 )
-from endpoint_handlers.property_search.helper_functions.get_job_filings import (
+from handlers.property_search.helper_functions.get_job_filings import (
     get_job_filings,
 )
-from endpoint_handlers.property_search.helper_functions.get_last_sold import (
+from handlers.property_search.helper_functions.get_last_sold import (
     get_last_sold,
 )
-from endpoint_handlers.property_search.helper_functions.get_mortgage import get_mortgage
-from endpoint_handlers.property_search.helper_functions.get_previous_owners import (
+from handlers.property_search.helper_functions.get_mortgage import get_mortgage
+from handlers.property_search.helper_functions.get_previous_owners import (
     get_previous_home_owners,
 )
-from endpoint_handlers.property_search.helper_functions.get_violations import (
+from handlers.property_search.helper_functions.get_violations import (
     get_violations,
 )
-from endpoint_handlers.property_search.helper_functions.get_zoning import get_zoning
-from endpoint_handlers.property_search.helper_functions.standardize_address_for_database import (
+from handlers.property_search.helper_functions.get_zoning import get_zoning
+from handlers.property_search.helper_functions.standardize_address_for_database import (
     standardize_address,
 )
 from exceptions.property_search_exceptions import (
@@ -33,7 +33,7 @@ from exceptions.property_search_exceptions import (
     InvalidBBLError,
 )
 from logger_config import logger
-from pydantic_models import Owners, PropertyDetailsResponse
+from schemas import Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
 
 

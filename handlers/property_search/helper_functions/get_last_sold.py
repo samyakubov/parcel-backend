@@ -3,7 +3,7 @@ import pandas as pd
 from database_connector import DatabaseConnector
 from exceptions.property_search_exceptions import InvalidBBLError
 from logger_config import logger
-from pydantic_models import LastSold
+from schemas import LastSold
 
 
 def get_last_sold(bbl: str, db: DatabaseConnector) -> LastSold | None:

@@ -1,6 +1,6 @@
 from database_connector import DatabaseConnector
 from logger_config import logger
-from pydantic_models import JobFiled
+from schemas import JobFiled
 
 
 def get_job_filings(bbl: str, db: DatabaseConnector) -> list[JobFiled]:

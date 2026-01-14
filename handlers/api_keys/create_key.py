@@ -3,7 +3,7 @@ import secrets
 from database_connector import DatabaseConnector
 from exceptions.api_key_exceptions import FailedToCreateApiKeyError
 from logger_config import logger
-from pydantic_models import APIKeyConfig
+from schemas import APIKeyConfig
 
 
 def create_key(name: str, db: DatabaseConnector) -> APIKeyConfig:

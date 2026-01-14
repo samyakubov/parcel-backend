@@ -1,5 +1,5 @@
 from database_connector import DatabaseConnector
-from pydantic_models import APIKeyConfig
+from schemas import APIKeyConfig
 
 
 def list_all_keys(db: DatabaseConnector) -> list[APIKeyConfig]:

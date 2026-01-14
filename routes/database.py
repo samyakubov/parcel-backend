@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from database_connector import DatabaseConnector, get_db
-from endpoint_handlers.database.database_stats import database_stats
+from handlers.database.database_stats import database_stats
 
 database_routes = APIRouter(prefix="/database")
 

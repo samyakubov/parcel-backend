@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from database_connector import DatabaseConnector, get_db
 from logger_config import logger
-from pydantic_models import AskRequest, AskResponse
+from schemas import AskRequest, AskResponse
 from services.ai.llm_agent import LLMAgent
 
 ai_routes = APIRouter(prefix="/ai")
