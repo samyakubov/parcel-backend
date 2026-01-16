@@ -1,8 +1,7 @@
+import os
 from collections.abc import Generator
-
 import duckdb
 import pandas as pd
-
 from logger_config import logger
 
 
@@ -100,7 +99,8 @@ class DatabaseConnector:
 
 
 def get_db() -> Generator[DatabaseConnector, None, None]:
-    db = DatabaseConnector("nycdb.duckdb")
+    db = DatabaseConnector(os.getenv("DATABASE_PATH"))
+    yield db
     try:
         db.connect()
         yield db

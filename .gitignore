@@ -7,3 +7,4 @@ __pycache__/
 /.vscode/
 /.kiro/
 /.env
+/parcel-aws-server.pem
