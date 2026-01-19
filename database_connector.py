@@ -100,9 +100,7 @@ class DatabaseConnector:
 
 def get_db() -> Generator[DatabaseConnector, None, None]:
     db = DatabaseConnector(os.getenv("DATABASE_PATH"))
-    yield db
     try:
-        db.connect()
         yield db
     finally:
         db.close()
