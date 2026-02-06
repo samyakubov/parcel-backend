@@ -127,6 +127,21 @@ class PropertyRecord(BaseModel):
             return v.strftime("%Y-%m-%d")
         return v
 
+    @field_validator(
+        "prop_unit", "prop_partiallot", "prop_type", "party_borough",
+        "partytype_desc", "party_address1", "party_address2", "party_country",
+        "party_city", "party_state", "party_zip", "doc_type", "zipcode",
+        "police_prct", "owner_type", "owner_name", "area_source", "ext",
+        "prox_code", "irr_lot_code", "lot_type", "bsmt_code",
+        mode="before"
+    )
+    @classmethod
+    def convert_nan_to_none(cls, v):
+        """Convert pandas NaN to None for optional string fields"""
+        if pd.isna(v):
+            return None
+        return v
+
 
 class LastSold(BaseModel):
     """Response model for a last sold message."""
