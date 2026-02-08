@@ -93,6 +93,5 @@ class DatabaseConnector:
             self.conn.close()
             self.conn = None
 
-
 def get_db():
     yield DatabaseConnector.get_instance()
