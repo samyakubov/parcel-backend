@@ -1,5 +1,4 @@
 import os
-from collections.abc import Generator
 import duckdb
 import pandas as pd
 from logger_config import logger
@@ -12,30 +11,27 @@ class DatabaseError(Exception):
 
 
 class DatabaseConnector:
-    """A class to connect to a DuckDB database and execute queries."""
+    _instance = None
 
     def __init__(self, db_path=":memory:"):
-        """Initializes the DatabaseConnector.
-
-        Args:
-            db_path (str, optional): The path to the DuckDB database file.
-                Defaults to ":memory:", which creates an in-memory database.
-        """
         self.db_path = db_path
         self.conn = None
 
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            db_path = os.getenv("DATABASE_PATH", ":memory:")
+            cls._instance = cls(db_path)
+            cls._instance.connect()
+        return cls._instance
+
     def connect(self) -> duckdb.DuckDBPyConnection:
-        """Connects to the DuckDB database.
-
-        Returns:
-            duckdb.DuckDBPyConnection: A connection object to the database.
-
-        Raises:
-            DatabaseError: If the connection fails.
-        """
         if not self.conn:
             try:
-                self.conn = duckdb.connect(self.db_path)
+                self.conn = duckdb.connect(self.db_path, read_only=True, config={
+                    'memory_limit': '2GB',
+                    'threads': 2
+                })
             except Exception as e:
                 logger.error(f"Failed to connect to database at '{self.db_path}': {e}", exc_info=True)
                 raise DatabaseError(f"Database connection failed: {e}") from e
@@ -98,10 +94,5 @@ class DatabaseConnector:
             self.conn = None
 
 
-def get_db() -> Generator[DatabaseConnector, None, None]:
-    db = DatabaseConnector(os.getenv("DATABASE_PATH"))
-    db.connect()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_db():
+    yield DatabaseConnector.get_instance()
