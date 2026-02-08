@@ -148,7 +148,7 @@ def search_by_property_address(
             last_sold=last_sold,
             owners=owners,
             mortgage=get_mortgage(acris_df, last_sold),
-            records=records_df.sort_values(by="record_filed", ascending=False).where(records_df.notna(), None).to_dict(orient="records"),
+            records=records_df.sort_values(by="record_filed", ascending=False).astype(object).where(records_df.notna(), None).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, dobjobs_df),
             violations=get_violations(bbl, db),
             complaints=get_complaints(address, db),

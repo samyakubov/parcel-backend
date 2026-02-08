@@ -28,10 +28,11 @@ def get_job_filings(bbl: str, dobjobs_df: pd.DataFrame) -> list[JobFiled]:
         job_filings_df = dobjobs_df[
             ["job_description", "bin", "job_status", "job_type",
              "applicant_first_name", "applicant_last_name", "applicant_professional_title"]
-        ]
+        ].copy()
 
         logger.info(f"--------------------Found {len(job_filings_df)} job filings for BBL: {bbl}--------------------\n")
-        job_filings_df = job_filings_df.where(job_filings_df.notna(), None)
+        # Convert object columns to Python-native types so NaN becomes None (not float nan)
+        job_filings_df = job_filings_df.astype(object).where(job_filings_df.notna(), None)
         return job_filings_df.to_dict(orient="records")
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching job filings for BBL {bbl}: {e}", exc_info=True)
