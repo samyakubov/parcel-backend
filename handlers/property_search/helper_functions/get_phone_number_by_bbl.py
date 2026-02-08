@@ -1,38 +1,35 @@
 import pandas as pd
 
-from database_connector import DatabaseConnector
 from logger_config import logger
 
 
-def get_phone_number_by_bbl(bbl: str, db: DatabaseConnector) -> pd.DataFrame | list:
-    """Gets phone numbers for a given BBL.
+def extract_phone_numbers(dobjobs_df: pd.DataFrame) -> pd.DataFrame | list:
+    """Extracts phone numbers from pre-fetched dobjobs data.
 
     Args:
-        bbl (str): The BBL of the property to get phone numbers for.
-        db (DatabaseConnector): The database connector instance.
+        dobjobs_df (pd.DataFrame): Pre-fetched dobjobs records with columns:
+            owners_phone, owners_first_name, owners_last_name.
 
     Returns:
-        Union[pd.DataFrame, List]: A DataFrame containing the phone numbers and names of the owners.
+        Union[pd.DataFrame, List]: A DataFrame containing the phone numbers and owner_full_name.
             Returns an empty list if no phone numbers are found or if an error occurs.
     """
-    if not bbl:
-        logger.warning("Attempted to get phone number without a BBL.")
-        return []
     try:
-        logger.info(f"Fetching phone numbers for BBL: {bbl}")
-        phone_numbers = db.execute_df(
-            "SELECT distinct ownersphone as owners_phone, ownersfirstname as owners_first_name, ownerslastname as owners_last_name FROM dobjobs WHERE bbl = ?",
-            [bbl],
-        )
-        if phone_numbers.empty:
-            logger.info(f"No phone numbers found in job filings for BBL: {bbl}")
+        if dobjobs_df.empty:
             return []
 
-        logger.info(f"Found {len(phone_numbers)} phone number entries for BBL: {bbl}")
+        phone_numbers = dobjobs_df[
+            ["owners_phone", "owners_first_name", "owners_last_name"]
+        ].drop_duplicates()
+
+        if phone_numbers.empty:
+            return []
+
+        phone_numbers = phone_numbers.copy()
         phone_numbers["owner_full_name"] = (
             phone_numbers["owners_last_name"].fillna("") + ", " + phone_numbers["owners_first_name"].fillna("")
         )
         return phone_numbers
     except Exception as e:
-        logger.error(f"An unexpected error occurred while fetching phone numbers for BBL {bbl}: {e}", exc_info=True)
+        logger.error(f"Error extracting phone numbers: {e}", exc_info=True)
         return []

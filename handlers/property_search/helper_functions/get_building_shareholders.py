@@ -1,8 +1,9 @@
-from database_connector import DatabaseConnector
+import pandas as pd
+
 from logger_config import logger
 
 
-def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
+def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
     """Gets the current shareholders of a building.
 
     This function analyzes the transaction history of a building to determine the current shareholders.
@@ -10,7 +11,7 @@ def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
 
     Args:
         bbl (str): The BBL of the building.
-        db (DatabaseConnector): The database connector instance.
+        acris_df (pd.DataFrame): Pre-fetched ACRIS records for this BBL.
 
     Returns:
         List[str]: A list of the current shareholders. Returns an empty list if no shareholders are found
@@ -21,24 +22,25 @@ def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
         return []
     try:
         logger.info(f"--------------------Fetching building shareholders for BBL: {bbl}--------------------")
-        all_transactions = db.execute_df(
-            """
-                                        SELECT party_name as current_owner,
-                                        CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, record_filed AS transaction_date
-                                         FROM aggregated_acris_records
-                                         WHERE bbl = ?
-                                           AND doc_type = 'BOTH RPTT AND RETT'
-                                           AND amount > 0
-                                           AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
-                                         """,
-            [bbl],
-        )
+        filtered = acris_df[
+            (acris_df["doc_type"] == "BOTH RPTT AND RETT")
+            & (acris_df["amount"] > 0)
+            & (acris_df["partytype_desc"].isin(["GRANTEE/BUYER", "GRANTOR/SELLER"]))
+        ]
 
-        if all_transactions.empty:
+        if filtered.empty:
             logger.warning(
                 f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n"
             )
             return []
+
+        all_transactions = pd.DataFrame({
+            "current_owner": filtered["party_name"].values,
+            "buy_or_sell": filtered["partytype_desc"].map(
+                {"GRANTEE/BUYER": "BUY", "GRANTOR/SELLER": "SELL"}
+            ).values,
+            "transaction_date": filtered["record_filed"].values,
+        })
 
         logger.info(
             f"Found {len(all_transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status."

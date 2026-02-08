@@ -6,7 +6,7 @@ from logger_config import logger
 from schemas import LastSold
 
 
-def get_last_sold(bbl: str, db: DatabaseConnector) -> LastSold | None:
+def get_last_sold(bbl: str, acris_df: pd.DataFrame, db: DatabaseConnector) -> LastSold | None:
     """Gets the last sold information for a given BBL.
 
     This function compares the latest sale record and the latest deed record to determine the most accurate
@@ -14,7 +14,8 @@ def get_last_sold(bbl: str, db: DatabaseConnector) -> LastSold | None:
 
     Args:
         bbl: The BBL (Borough-Block-Lot) of the property to get the last sold information for.
-        db: The database connector instance.
+        acris_df: Pre-fetched ACRIS records for this BBL.
+        db: The database connector instance (used only for DOF sales lookup).
 
     Returns:
         A LastSold object containing the last sold information, or None if no information is found.
@@ -27,7 +28,7 @@ def get_last_sold(bbl: str, db: DatabaseConnector) -> LastSold | None:
     try:
         logger.info(f"--------------------Fetching last sold information for BBL: {bbl}--------------------")
         sale_data = _get_latest_sale_record(bbl, db)
-        deed_data = _get_latest_deed_record(bbl, db)
+        deed_data = _get_latest_deed_record(bbl, acris_df)
         sale_date = sale_data.last_sold_date if sale_data else None
         deed_date = deed_data.last_sold_date if deed_data else None
 
@@ -108,32 +109,29 @@ def _get_latest_sale_record(bbl: str, db: DatabaseConnector) -> LastSold | None:
     return None
 
 
-def _get_latest_deed_record(bbl: str, db: DatabaseConnector) -> LastSold | None:
+def _get_latest_deed_record(bbl: str, acris_df: pd.DataFrame) -> LastSold | None:
     """Gets the latest deed record for a given BBL.
 
     Args:
         bbl: The BBL of the property.
-        db: The database connector instance.
+        acris_df: Pre-fetched ACRIS records for this BBL.
 
     Returns:
         A LastSold object containing the latest deed record information, or None if no record is found.
     """
     logger.info(f"Querying for latest deed record for BBL: {bbl}")
-    deeds_df = db.execute_df(
-        """
-                 SELECT
-                     amount AS last_sold_price,
-                     record_filed AS sale_date,
-                     party_name AS deed_party_name
-                 FROM aggregated_acris_records
-                 WHERE bbl = ?
-                   AND doc_type = 'DEED'
-                   AND amount > 0
-                   AND partytype_desc = 'GRANTEE/BUYER'
-                 ORDER BY record_filed DESC
-                 """,
-        [bbl],
-    )
+    deeds_df = acris_df[
+        (acris_df["doc_type"] == "DEED")
+        & (acris_df["amount"] > 0)
+        & (acris_df["partytype_desc"] == "GRANTEE/BUYER")
+    ][["amount", "record_filed", "party_name"]].copy()
+
+    deeds_df = deeds_df.rename(columns={
+        "amount": "last_sold_price",
+        "record_filed": "sale_date",
+        "party_name": "deed_party_name",
+    }).sort_values("sale_date", ascending=False).reset_index(drop=True)
+
     if deeds_df.empty:
         logger.info(f"No deed records found for BBL: {bbl}")
         return None
@@ -143,13 +141,13 @@ def _get_latest_deed_record(bbl: str, db: DatabaseConnector) -> LastSold | None:
 
     if latest.last_sold_price < 1000:
         logger.info(f"Deed price is low (< $1000). Attempting to find a more representative price for BBL: {bbl}")
-        return _handle_low_price_deed_case(bbl, deeds_df, latest, db)
+        return _handle_low_price_deed_case(bbl, deeds_df, latest, acris_df)
 
     return LastSold(last_sold_price=int(latest.last_sold_price), last_sold_date=latest.sale_date)
 
 
 def _handle_low_price_deed_case(
-    bbl: str, deeds_df: pd.DataFrame, latest: pd.Series, db: DatabaseConnector
+    bbl: str, deeds_df: pd.DataFrame, latest: pd.Series, acris_df: pd.DataFrame
 ) -> LastSold | None:
     """Handles cases where the latest deed has a low price.
 
@@ -159,7 +157,7 @@ def _handle_low_price_deed_case(
         bbl: The BBL of the property.
         deeds_df: A DataFrame of deed records.
         latest: The latest deed record.
-        db: The database connector instance.
+        acris_df: Pre-fetched ACRIS records for this BBL.
 
     Returns:
         A LastSold object containing the last sold information, or the result of _match_deed_with_mortgage.
@@ -172,37 +170,36 @@ def _handle_low_price_deed_case(
             )
             return LastSold(last_sold_price=int(prev.last_sold_price), last_sold_date=prev.sale_date)
 
-    return _match_deed_with_mortgage(bbl, deeds_df, db)
+    return _match_deed_with_mortgage(bbl, deeds_df, acris_df)
 
 
-def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, db: DatabaseConnector) -> LastSold | None:
+def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, acris_df: pd.DataFrame) -> LastSold | None:
     """Matches a low-price deed with a mortgage.
 
     Args:
         bbl: The BBL of the property.
         deeds_df: A DataFrame of deed records.
-        db: The database connector instance.
+        acris_df: Pre-fetched ACRIS records for this BBL.
 
     Returns:
         A LastSold object containing the last sold information, or None if no match is found.
     """
     logger.info(f"Attempting to match low-price deed with a mortgage for BBL: {bbl}")
-    query = """
-            SELECT party_name AS mortgage_party_name, MAX(record_filed) AS latest_mortgage_date
-            FROM aggregated_acris_records
-            WHERE bbl = ?
-              AND partytype_desc = 'MORTGAGOR/BORROWER'
-              AND doc_type = 'MORTGAGE'
-            GROUP BY party_name
-            ORDER BY latest_mortgage_date DESC
-                LIMIT 1
-            """
-    mortgage_df = db.execute_df(query, [bbl])
-    if mortgage_df.empty:
+
+    mortgage_borrowers = acris_df[
+        (acris_df["partytype_desc"] == "MORTGAGOR/BORROWER")
+        & (acris_df["doc_type"] == "MORTGAGE")
+    ]
+
+    if mortgage_borrowers.empty:
         logger.info(f"No mortgage record found to match with deed for BBL: {bbl}")
         return None
 
-    mortgage_date = mortgage_df.iloc[0]["latest_mortgage_date"]
+    grouped = mortgage_borrowers.groupby("party_name")["record_filed"].max().reset_index()
+    grouped.columns = ["mortgage_party_name", "latest_mortgage_date"]
+    grouped = grouped.sort_values("latest_mortgage_date", ascending=False)
+
+    mortgage_date = grouped.iloc[0]["latest_mortgage_date"]
     matched = deeds_df[deeds_df["sale_date"] == mortgage_date]
 
     if matched.empty:
