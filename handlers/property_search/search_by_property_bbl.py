@@ -93,7 +93,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         dobjobs_df = db.execute_df(
             """SELECT
                 jobdescription as job_description,
-                bin,
+                bin as bin,
                 jobstatus as job_status,
                 jobtype as job_type,
                 ApplicantsFirstName as applicant_first_name,

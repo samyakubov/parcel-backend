@@ -30,16 +30,19 @@ from exceptions.property_search_exceptions import (
     InvalidAddressError,
 )
 from logger_config import logger
-from schemas import Owners, PropertyDetailsResponse
+from schemas import Coordinates, Owners, PropertyDetailsResponse
 from services.geolocation.address_to_coord import address_to_coord
 
 
-def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyDetailsResponse:
+def search_by_property_address(
+    address: str, db: DatabaseConnector, coordinates: Coordinates | None = None
+) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
         address: The address of the property to search for.
         db: The database connector instance.
+        coordinates: Optional pre-resolved coordinates (skips forward geocoding when provided).
 
     Raises:
         InvalidAddressError: If the address is invalid.
@@ -110,7 +113,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         dobjobs_df = db.execute_df(
             """SELECT
                 jobdescription as job_description,
-                bin,
+                bin as bin,
                 jobstatus as job_status,
                 jobtype as job_type,
                 ApplicantsFirstName as applicant_first_name,
@@ -138,11 +141,12 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
 
-        try:
-            coordinates = address_to_coord(address)
-        except Exception as e:
-            logger.warning(f"Failed to get coordinates for address '{address}': {e}")
-            coordinates = None
+        if coordinates is None:
+            try:
+                coordinates = address_to_coord(address)
+            except Exception as e:
+                logger.warning(f"Failed to get coordinates for address '{address}': {e}")
+                coordinates = None
 
         last_sold = get_last_sold(bbl, acris_df, db) if prop_type not in coop_property_types else None
         return PropertyDetailsResponse(
