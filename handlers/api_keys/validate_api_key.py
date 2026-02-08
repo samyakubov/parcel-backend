@@ -38,6 +38,7 @@ async def validate_api_key(
         logger.error(f"Authentication failed: Invalid API key ({partial_key}...)")
         raise InvalidApiKeyError("Invalid or disabled API key")
 
-    update_last_used(x_api_key, db=db)
+    # Disabled: update_last_used writes to DB, incompatible with read_only mode
+    # update_last_used(x_api_key, db=db)
 
     logger.info("Authentication successful with given api key \n")
