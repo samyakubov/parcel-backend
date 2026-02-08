@@ -63,30 +63,25 @@ def search_by_property_address(
             f"--------------------------Starting property search for address: '{address}'--------------------------"
         )
 
-        # Lightweight BBL lookup: only reads 2 columns, no JOIN, stops at first match
-        bbl_result = db.execute(
-            "SELECT bbl FROM aggregated_acris_records WHERE search_prop_address = ? LIMIT 1",
+        # Combined BBL lookup + bulk ACRIS fetch in one query (single scan of aggregated_acris_records)
+        acris_df = db.execute_df(
+            "SELECT * FROM aggregated_acris_records WHERE bbl = (SELECT bbl FROM aggregated_acris_records WHERE search_prop_address = ? LIMIT 1)",
             [address.upper()],
         )
 
-        if not bbl_result:
+        if acris_df.empty:
             logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
             parts = address.strip().split(" ", 1)
             house_number, street = parts
-            bbl_result = db.execute(
-                "SELECT bbl FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? LIMIT 1",
+            acris_df = db.execute_df(
+                "SELECT * FROM aggregated_acris_records WHERE bbl = (SELECT bbl FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? LIMIT 1)",
                 [house_number, f"{street.replace(' ', '%').upper()}%"],
             )
-            if not bbl_result:
+            if acris_df.empty:
                 logger.warning(f"No records found for address: '{address}' after lenient search.")
                 raise AddressNotFoundError(f"No records found for address: {address}")
 
-        bbl = bbl_result[0][0]
-
-        # Single ACRIS query by BBL - serves BOTH response records AND all helper functions
-        acris_df = db.execute_df(
-            "SELECT * FROM aggregated_acris_records WHERE bbl = ?", [bbl]
-        )
+        bbl = acris_df.iloc[0]["bbl"]
 
         # Small pluto lookup (one row per BBL, fast)
         pluto_df = db.execute_df(
