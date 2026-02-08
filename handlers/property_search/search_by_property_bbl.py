@@ -59,24 +59,35 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         raise InvalidBBLError("BBL cannot be empty")
     try:
         logger.info(f"Starting property search for BBL: '{bbl}'")
-        records_df = db.execute_df("SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.bbl = ? ORDER BY a.documentid", [bbl])
-        records_df = records_df.drop(columns=["search_prop_address"])
+
+        # Single ACRIS query by BBL - serves BOTH response records AND all helper functions
+        acris_df = db.execute_df(
+            "SELECT * FROM aggregated_acris_records WHERE bbl = ?", [bbl]
+        )
+
+        if acris_df.empty:
+            logger.warning(f"No records found for BBL: '{bbl}'")
+            raise BBLNotFoundError(f"No records found for BBL: {bbl}")
+
+        # Small pluto lookup (one row per BBL, fast)
+        pluto_df = db.execute_df(
+            "SELECT * FROM pluto_latest WHERE bbl = ?", [bbl]
+        )
+
+        # Build response records by merging ACRIS + pluto in Python (replaces SQL JOIN)
+        if not pluto_df.empty:
+            records_df = acris_df.merge(pluto_df, on="bbl", how="left")
+        else:
+            records_df = acris_df.copy()
+        records_df = records_df.drop(columns=["search_prop_address"], errors="ignore")
+
+        prop_type = acris_df.iloc[0]["prop_type"]
         current_owner_data = []
         should_get_last_sold_for_buildings = False
 
         coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
 
-        if records_df.empty:
-            logger.warning(f"No records found for BBL: '{bbl}'")
-            raise BBLNotFoundError(f"No records found for BBL: {bbl}")
-
-        prop_type = records_df.iloc[0].prop_type
-        logger.info(f"Found {len(records_df)} records for BBL '{bbl}' with property type '{prop_type}'.")
-
-        # Bulk fetch all ACRIS records for this BBL (replaces ~10 individual queries)
-        acris_df = db.execute_df(
-            "SELECT * FROM aggregated_acris_records WHERE bbl = ?", [bbl]
-        )
+        logger.info(f"Found {len(acris_df)} records for BBL '{bbl}' with property type '{prop_type}'.")
 
         # Bulk fetch all dobjobs records for this BBL (replaces 3 individual queries)
         dobjobs_df = db.execute_df(
@@ -120,7 +131,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         try:
             address_str = add_ordinal_to_street_number(
                 standardize_address(
-                    str(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname).lower()
+                    str(acris_df.iloc[0]["prop_streetnumber"] + " " + acris_df.iloc[0]["prop_streetname"]).lower()
                 )
             )
             coordinates = address_to_coord(address_str)
@@ -137,7 +148,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, dobjobs_df),
             violations=get_violations(bbl, db),
-            complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, db),
+            complaints=get_complaints(acris_df.iloc[0]["prop_streetnumber"] + " " + acris_df.iloc[0]["prop_streetname"], db),
             zoning=get_zoning(bbl, db),
             coordinates=coordinates,
         )

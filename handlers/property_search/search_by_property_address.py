@@ -59,36 +59,51 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         logger.info(
             f"--------------------------Starting property search for address: '{address}'--------------------------"
         )
-        records_df = db.execute_df(
-            "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.search_prop_address = ? ORDER BY a.documentid",
+
+        # Lightweight BBL lookup: only reads 2 columns, no JOIN, stops at first match
+        bbl_result = db.execute(
+            "SELECT bbl FROM aggregated_acris_records WHERE search_prop_address = ? LIMIT 1",
             [address.upper()],
         )
-        records_df = records_df.drop(columns=["search_prop_address"])
+
+        if not bbl_result:
+            logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
+            parts = address.strip().split(" ", 1)
+            house_number, street = parts
+            bbl_result = db.execute(
+                "SELECT bbl FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? LIMIT 1",
+                [house_number, f"{street.replace(' ', '%').upper()}%"],
+            )
+            if not bbl_result:
+                logger.warning(f"No records found for address: '{address}' after lenient search.")
+                raise AddressNotFoundError(f"No records found for address: {address}")
+
+        bbl = bbl_result[0][0]
+
+        # Single ACRIS query by BBL - serves BOTH response records AND all helper functions
+        acris_df = db.execute_df(
+            "SELECT * FROM aggregated_acris_records WHERE bbl = ?", [bbl]
+        )
+
+        # Small pluto lookup (one row per BBL, fast)
+        pluto_df = db.execute_df(
+            "SELECT * FROM pluto_latest WHERE bbl = ?", [bbl]
+        )
+
+        # Build response records by merging ACRIS + pluto in Python (replaces SQL JOIN)
+        if not pluto_df.empty:
+            records_df = acris_df.merge(pluto_df, on="bbl", how="left")
+        else:
+            records_df = acris_df.copy()
+        records_df = records_df.drop(columns=["search_prop_address"], errors="ignore")
+
+        prop_type = acris_df.iloc[0]["prop_type"]
         current_owner_data = []
 
         coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
 
-        if records_df.empty:
-            logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
-            parts = address.strip().split(" ", 1)
-            house_number, street = parts
-            records_df = db.execute_df(
-                "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
-                [house_number, f"{street.replace(' ', '%').upper()}%"],
-            )
-            if records_df.empty:
-                logger.warning(f"No records found for address: '{address}' after lenient search.")
-                raise AddressNotFoundError(f"No records found for address: {address}")
-
-        bbl = records_df.iloc[0].bbl
-        prop_type = records_df.iloc[0].prop_type
         logger.info(
-            f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n"
-        )
-
-        # Bulk fetch all ACRIS records for this BBL (replaces ~10 individual queries)
-        acris_df = db.execute_df(
-            "SELECT * FROM aggregated_acris_records WHERE bbl = ?", [bbl]
+            f"Found {len(acris_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n"
         )
 
         # Bulk fetch all dobjobs records for this BBL (replaces 3 individual queries)
