@@ -8,3 +8,5 @@ __pycache__/
 /.kiro/
 /.env
 /parcel-aws-server.pem
+aws
+venv
