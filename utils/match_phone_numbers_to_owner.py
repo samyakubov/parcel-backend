@@ -14,12 +14,12 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame | list, owners_list
         List[str]: A list of strings, where each string is the owner's
             name and their phone number in the format
             "owner_name (phone_number)". If no phone number is found,
-            it will be "owner_name (No Phone Number)".
+            it will just be "owner_name".
     """
     owners_df = pd.DataFrame({"owner_full_name": owners_list})
 
     if isinstance(phone_numbers, list) or phone_numbers.empty:
-        owners_df["owners_phone"] = "No Phone Number"
+        owners_df["owners_phone"] = None
     else:
         merged_df = owners_df.merge(
             phone_numbers[["owner_full_name", "owners_phone"]],
@@ -27,8 +27,11 @@ def match_phone_numbers_to_owner(phone_numbers: pd.DataFrame | list, owners_list
             how="left"
         )
         owners_df = merged_df
-        owners_df["owners_phone"] = owners_df["owners_phone"].fillna("No Phone Number")
 
-    result = owners_df.apply(lambda row: f"{row['owner_full_name']} ({row['owners_phone']})", axis=1)
+    result = owners_df.apply(
+        lambda row: f"{row['owner_full_name']} ({row['owners_phone']})"
+        if pd.notna(row["owners_phone"]) else row["owner_full_name"],
+        axis=1
+    )
 
     return result.tolist()
