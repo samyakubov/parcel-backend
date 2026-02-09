@@ -1,44 +1,35 @@
 from datetime import datetime
+import pandas as pd
 
-from database_connector import DatabaseConnector
 from schemas import LastSold, MortgageRecord
 
 
 def get_mortgage(
-    bbl: str,
-    db: DatabaseConnector,
+    acris_df: pd.DataFrame,
     last_sold_for: LastSold | None = None,
 ) -> MortgageRecord | None:
     """
     Extract mortgage lender and borrower details from property records.
 
     Args:
-        bbl: The property's Borough-Block-Lot identifier
-        db: DatabaseConnector instance
+        acris_df: DataFrame containing aggregated ACRIS records.
         last_sold_for: LastSold object containing sale information, or None
 
     Returns:
         MortgageRecord object with 'lender' and 'borrower' fields, or None if not found
     """
-    query = """
-            SELECT
-                documentid,
-                bbl,
-                amount,
-                partytype_desc,
-                party_name,
-                doc_type,
-                record_filed
-            FROM aggregated_acris_records
-            WHERE bbl = ?
-              AND doc_type = 'MORTGAGE'
-            ORDER BY record_filed DESC
-            """
+    if acris_df.empty:
+        return None
 
-    df = db.execute_df(query, [bbl])
-
+    # Filter for MORTGAGE
+    mask = (acris_df["doc_type"] == 'MORTGAGE')
+    df = acris_df[mask].copy()
+    
     if df.empty:
         return None
+        
+    # Sort by record_filed DESC to match SQL ORDER BY
+    df = df.sort_values(by="record_filed", ascending=False)
 
     mortgage_records = df.to_dict("records")
 

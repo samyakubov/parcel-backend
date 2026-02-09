@@ -1,4 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
 from database_connector import DatabaseConnector
+from handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from handlers.property_search.helper_functions.get_building_shareholders import (
     get_building_shareholders,
 )
@@ -52,6 +55,9 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         logger.warning("An attempt was made to search for a property without providing an address.")
         raise InvalidAddressError("Address cannot be empty")
 
+    executor = ThreadPoolExecutor(max_workers=1)
+    future_coords = executor.submit(address_to_coord, address)
+
     try:
         logger.info(
             f"--------------------------Starting property search for address: '{address}'--------------------------"
@@ -60,7 +66,9 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.search_prop_address = ? ORDER BY a.documentid",
             [address.upper()],
         )
-        records_df = records_df.drop(columns=["search_prop_address"])
+        # Handle duplicate columns (like 'bbl') from the join
+        records_df = records_df.loc[:, ~records_df.columns.duplicated()]
+
         current_owner_data = []
 
         coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
@@ -68,14 +76,20 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         if records_df.empty:
             logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
             parts = address.strip().split(" ", 1)
-            house_number, street = parts
-            records_df = db.execute_df(
-                "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
-                [house_number, f"{street.replace(' ', '%').upper()}%"],
-            )
+            if len(parts) == 2:
+                house_number, street = parts
+                records_df = db.execute_df(
+                    "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
+                    [house_number, f"{street.replace(' ', '%').upper()}%"],
+                )
+                records_df = records_df.loc[:, ~records_df.columns.duplicated()]
+
             if records_df.empty:
                 logger.warning(f"No records found for address: '{address}' after lenient search.")
                 raise AddressNotFoundError(f"No records found for address: {address}")
+
+        if "search_prop_address" in records_df.columns:
+            records_df = records_df.drop(columns=["search_prop_address"])
 
         bbl = records_df.iloc[0].bbl
         prop_type = records_df.iloc[0].prop_type
@@ -83,37 +97,82 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n"
         )
 
+        # Bulk fetch other data
+        # 1. DOF Sales
+        sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
+        
+        # 2. Jobs (and phone numbers)
+        jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
+        
+        # 3. Violations
+        violations_df = db.execute_df(
+            """SELECT bbl, violation_status, issue_date, violation_type, description, severity, 
+                      penalty_amount, amount_paid, balance_due, respondent_name, house_number, street, city, zip 
+               FROM aggregated_acris_violations WHERE bbl = ?""", 
+            [bbl]
+        )
+        
+        # 4. Zoning
+        zoning_df = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
+        
+        # 5. Complaints
+        std_address = standardize_address(address)
+        house_num = std_address.split(" ")[0]
+        street_name = " ".join(std_address.split(" ")[1:])
+        complaints_df = db.execute_df(
+            "SELECT * FROM dob_complaints WHERE housenumber = ? AND housestreet = ?", 
+            [house_num, street_name]
+        )
+
+        # 6. Phone numbers
+        # jobs_df has 'owner_phone' and 'owner_name' usually? 
+        # dobjobs has 'ownername' and 'OwnersPhone'
+        phone_numbers_df = pd.DataFrame()
+        if not jobs_df.empty:
+            # Check for column existence to be safe or assuming standard
+            potential_cols = {
+                "ownername": "owner_full_name", 
+                "OwnersPhone": "owners_phone"
+            }
+            cols_to_use = [c for c in potential_cols.keys() if c in jobs_df.columns]
+            if len(cols_to_use) == 2:
+                phone_numbers_df = jobs_df[cols_to_use].rename(columns=potential_cols)
+
+
         if prop_type in coop_property_types:
-            current_owner_data = get_building_shareholders(bbl, db)
+            current_owner_data = get_building_shareholders(bbl, records_df)
 
         if len(current_owner_data) == 0:
-            current_owner_data = get_current_home_owner(bbl, db)
+            current_owner_data = get_current_home_owner(bbl, records_df, phone_numbers_df)
 
-        all_previous_data = get_previous_home_owners(bbl, db)
+        all_previous_data = get_previous_home_owners(bbl, records_df, phone_numbers_df)
         owners = Owners(
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
 
         try:
-            coordinates = address_to_coord(address)
+            coordinates = future_coords.result(timeout=5) # Wait for geocoding
         except Exception as e:
             logger.warning(f"Failed to get coordinates for address '{address}': {e}")
             coordinates = None
+        
+        # Shutdown executor
+        executor.shutdown(wait=False)
 
-        last_sold = get_last_sold(bbl, db) if prop_type not in coop_property_types else None
+        last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
+        
         return PropertyDetailsResponse(
-            last_sold= last_sold,
+            last_sold=last_sold,
             owners=owners,
-            mortgage=get_mortgage(bbl, db, last_sold),
+            mortgage=get_mortgage(records_df, last_sold),
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
-            job_filings=get_job_filings(bbl, db),
-            violations=get_violations(bbl, db),
-            complaints=get_complaints(address, db),
-            zoning=get_zoning(bbl, db),
+            job_filings=get_job_filings(bbl, jobs_df),
+            violations=get_violations(bbl, violations_df),
+            complaints=get_complaints(address, complaints_df),
+            zoning=get_zoning(bbl, zoning_df),
             coordinates=coordinates,
         )
-
     except (InvalidAddressError, AddressNotFoundError) as e:
         logger.error(f"{type(e).__name__} occurred while searching for address '{address}': {e}")
         raise

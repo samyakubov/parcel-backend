@@ -1,12 +1,11 @@
-from database_connector import DatabaseConnector
-from handlers.property_search.helper_functions.get_phone_number_by_bbl import (
-    get_phone_number_by_bbl,
-)
+import pandas as pd
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
 
-def get_previous_home_owners(bbl: str, db: DatabaseConnector) -> list[str]:
+def get_previous_home_owners(
+    bbl: str, acris_df: pd.DataFrame, phone_numbers_df: pd.DataFrame
+) -> list[str]:
     """Gets the previous homeowners for a given BBL.
 
     This function first tries to find the owners from deed documents.
@@ -14,56 +13,69 @@ def get_previous_home_owners(bbl: str, db: DatabaseConnector) -> list[str]:
 
     Args:
         bbl (str): The BBL of the property to get the previous home owners for.
-        db (DatabaseConnector): The database connector instance.
+        acris_df (pd.DataFrame): DataFrame containing aggregated ACRIS records.
+        phone_numbers_df (pd.DataFrame): DataFrame containing phone numbers.
 
     Returns:
         List[str]: A list of strings, where each string is the owner's name and their phone number.
             Returns an empty list if no owners are found or if an error occurs.
     """
-    if not bbl or not isinstance(bbl, str):
-        logger.error(f"Invalid BBL provided: '{bbl}'. It must be a non-empty string.")
+    if not bbl:
+        logger.error(f"Invalid BBL provided: '{bbl}'.")
         return []
 
-    try:
-        logger.info(f"--------------------Searching for previous home owners of BBL: {bbl}--------------------")
-        deed_records = db.execute_df(
-            "SELECT party_name AS owner_name FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'DEED' AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER') ORDER BY record_filed DESC ",
-            [bbl],
+    if acris_df.empty:
+         logger.warning(
+            f"--------------------No records found for BBL: {bbl}--------------------\n"
         )
-        phone_numbers = get_phone_number_by_bbl(bbl, db)
+         return []
 
+    try:
+        logger.info(f"--------------------Analyzing previous home owners of BBL: {bbl}--------------------")
+        
+        # 1. DEEDS
+        mask = (
+            (acris_df["doc_type"] == 'DEED') & 
+            (acris_df["partytype_desc"].isin(['GRANTEE/BUYER', 'GRANTOR/SELLER']))
+        )
+        deed_records = acris_df[mask].sort_values(by="record_filed", ascending=False)
+        
         if not deed_records.empty:
             logger.info(f"Found {len(deed_records)} deed records for BBL {bbl}")
-            deed_owners = deed_records["owner_name"].tolist()
+            deed_owners = deed_records["party_name"].tolist()
             seen = set()
             unique_owners = [owner for owner in deed_owners if not (owner in seen or seen.add(owner))]
             logger.info(
                 f"--------------------Found {len(unique_owners)} unique previous owner(s) from deed records for BBL {bbl}--------------------\n"
             )
-            return match_phone_numbers_to_owner(phone_numbers, unique_owners)
+            return match_phone_numbers_to_owner(phone_numbers_df, unique_owners)
 
         logger.info(f"No previous owners found from deed records for BBL {bbl}")
-        mortgage_doc = db.execute_df(
-            "SELECT documentid FROM aggregated_acris_records WHERE bbl = ? AND doc_type = 'MORTGAGE' GROUP BY documentid, record_filed, bbl, doc_type ORDER BY record_filed DESC LIMIT 1",
-            [bbl],
-        )
-
-        if not mortgage_doc.empty:
+        
+        # 2. MORTGAGES
+        mask_mortgage = (acris_df["doc_type"] == 'MORTGAGE')
+        mortgages = acris_df[mask_mortgage].sort_values(by="record_filed", ascending=False)
+        
+        if not mortgages.empty:
+            latest_mortgage_doc_id = mortgages.iloc[0]["documentid"]
+            
             logger.info(
-                f"Found latest mortgage document with ID {mortgage_doc.iloc[0]['documentid']} for BBL {bbl}. Fetching mortgagor records."
+                f"Found latest mortgage document with ID {latest_mortgage_doc_id} for BBL {bbl}. Fetching mortgagor records."
             )
-            mortgage_records = db.execute_df(
-                "SELECT party_name AS owner_name FROM aggregated_acris_records WHERE documentid = ? AND partytype_desc = 'MORTGAGOR/BORROWER'",
-                [mortgage_doc.iloc[0]["documentid"]],
-            )
+            
+            mortgage_records = mortgages[
+                 (mortgages["documentid"] == latest_mortgage_doc_id) & 
+                 (mortgages["partytype_desc"] == "MORTGAGOR/BORROWER")
+            ]
+            
             if not mortgage_records.empty:
-                mortgage_owners = mortgage_records["owner_name"].tolist()
+                mortgage_owners = mortgage_records["party_name"].tolist()
                 seen = set()
                 unique_owners = [owner for owner in mortgage_owners if not (owner in seen or seen.add(owner))]
                 logger.info(
                     f"--------------------Found {len(unique_owners)} unique previous owner(s) from mortgage records for BBL {bbl}--------------------\n"
                 )
-                return match_phone_numbers_to_owner(phone_numbers, unique_owners)
+                return match_phone_numbers_to_owner(phone_numbers_df, unique_owners)
 
         logger.warning(
             f"--------------------No previous owners could be determined for BBL: {bbl} from available records.--------------------\n"

@@ -1,8 +1,8 @@
-from database_connector import DatabaseConnector
+import pandas as pd
 from logger_config import logger
 
 
-def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
+def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
     """Gets the current shareholders of a building.
 
     This function analyzes the transaction history of a building to determine the current shareholders.
@@ -10,7 +10,7 @@ def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
 
     Args:
         bbl (str): The BBL of the building.
-        db (DatabaseConnector): The database connector instance.
+        acris_df (pd.DataFrame): DataFrame containing aggregated ACRIS records for the BBL.
 
     Returns:
         List[str]: A list of the current shareholders. Returns an empty list if no shareholders are found
@@ -19,33 +19,45 @@ def get_building_shareholders(bbl: str, db: DatabaseConnector) -> list[str]:
     if not bbl:
         logger.error("BBL is required to get building shareholders, but none was provided.")
         return []
-    try:
-        logger.info(f"--------------------Fetching building shareholders for BBL: {bbl}--------------------")
-        all_transactions = db.execute_df(
-            """
-                                        SELECT party_name as current_owner,
-                                        CASE WHEN partytype_desc = 'GRANTEE/BUYER' THEN 'BUY' ELSE 'SELL' END AS buy_or_sell, record_filed AS transaction_date
-                                         FROM aggregated_acris_records
-                                         WHERE bbl = ?
-                                           AND doc_type = 'BOTH RPTT AND RETT'
-                                           AND amount > 0
-                                           AND partytype_desc IN ('GRANTEE/BUYER', 'GRANTOR/SELLER')
-                                         """,
-            [bbl],
+    
+    if acris_df.empty:
+         logger.warning(
+            f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n"
         )
+         return []
 
-        if all_transactions.empty:
+    try:
+        logger.info(f"--------------------Analyzing building shareholders for BBL: {bbl}--------------------")
+        
+        # Filter for relevant transactions
+        mask = (
+            (acris_df["doc_type"] == 'BOTH RPTT AND RETT') & 
+            (acris_df["amount"] > 0) & 
+            (acris_df["partytype_desc"].isin(['GRANTEE/BUYER', 'GRANTOR/SELLER']))
+        )
+        transactions = acris_df[mask].copy()
+
+        if transactions.empty:
             logger.warning(
                 f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n"
             )
             return []
 
-        logger.info(
-            f"Found {len(all_transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status."
+        # Prepare for analysis
+        transactions["current_owner"] = transactions["party_name"]
+        transactions["buy_or_sell"] = transactions["partytype_desc"].apply(
+            lambda x: 'BUY' if x == 'GRANTEE/BUYER' else 'SELL'
         )
-        latest_per_party = all_transactions.groupby(
+        transactions["transaction_date"] = transactions["record_filed"]
+
+        logger.info(
+            f"Found {len(transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status."
+        )
+        
+        latest_per_party = transactions.groupby(
             ["current_owner", "buy_or_sell"], as_index=False
         ).transaction_date.max()
+        
         buy = latest_per_party[latest_per_party["buy_or_sell"] == "BUY"]
         sell = latest_per_party[latest_per_party["buy_or_sell"] == "SELL"]
 
