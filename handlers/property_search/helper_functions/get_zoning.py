@@ -29,7 +29,6 @@ def get_zoning(bbl: str, zoning_df: pd.DataFrame) -> Zoning | None:
     logger.info(f"Found zoning information for BBL: {bbl}")
     zoning = zoning_df.iloc[0]
 
-    # Use .get() method on Series to handle potentially missing columns if not all are present
     def safe_get(key):
         return zoning[key] if key in zoning else None
 
@@ -62,7 +61,7 @@ def get_zoning(bbl: str, zoning_df: pd.DataFrame) -> Zoning | None:
         zoning_districts=active_districts,
         commercial_overlays=commercial_overlays,
         special_districts=special_districts,
-        limited_height_district=safe_get("Limited Height District") or "", # Handle None as ""
+        limited_height_district=safe_get("Limited Height District") or "",
         last_updated="",
     )
     logger.info(f"--------------------Successfully processed zoning information for BBL: {bbl}--------------------\n")

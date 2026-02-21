@@ -1,7 +1,6 @@
-from fastapi import APIRouter, HTTPException
-import os
-from database_connector import DatabaseConnector
+from fastapi import APIRouter, Depends, HTTPException
 
+from database_connector import DatabaseConnector, get_db
 from services.census.geocode_address import geocode_address
 from services.census.get_census_data import get_census_data_handler
 
@@ -31,12 +30,13 @@ def get_census_data(address: str):
 
 
 @census_routes.get("/get_census_data/bbl={bbl}")
-def get_census_data_by_bbl(bbl: str):
+def get_census_data_by_bbl(bbl: str, db: DatabaseConnector = Depends(get_db)):
     """
     Gets census data for a given BBL.
 
     Args:
         bbl (str): The BBL to get census data for.
+        db (DatabaseConnector): The database connector.
 
     Returns:
         dict: A dictionary containing census data.
@@ -44,9 +44,6 @@ def get_census_data_by_bbl(bbl: str):
     Raises:
         HTTPException: If the BBL is not found or address cannot be geocoded.
     """
-    db_path = os.getenv("DATABASE_PATH", "nycdb.duckdb")
-    db = DatabaseConnector(db_path)
-    
     query = """
     SELECT prop_streetnumber, prop_streetname 
     FROM aggregated_acris_records 
@@ -54,18 +51,18 @@ def get_census_data_by_bbl(bbl: str):
     LIMIT 1
     """
     df = db.execute_df(query, [bbl])
-    
+
     if df.empty:
         raise HTTPException(status_code=404, detail=f"No address found for BBL {bbl}")
-        
+
     street_number = df.iloc[0]['prop_streetnumber']
     street_name = df.iloc[0]['prop_streetname']
-    
+
     if not street_number or not street_name:
-         raise HTTPException(status_code=404, detail=f"Incomplete address records for BBL {bbl}")
+        raise HTTPException(status_code=404, detail=f"Incomplete address records for BBL {bbl}")
 
     address = f"{street_number} {street_name}"
-    
+
     try:
         geo_data = geocode_address(address)
     except Exception as e:

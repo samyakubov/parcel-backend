@@ -23,9 +23,6 @@ from handlers.property_search.helper_functions.get_mortgage import get_mortgage
 from handlers.property_search.helper_functions.get_previous_owners import (
     get_previous_home_owners,
 )
-from handlers.property_search.helper_functions.get_violations import (
-    get_violations,
-)
 from handlers.property_search.helper_functions.get_zoning import get_zoning
 from handlers.property_search.helper_functions.standardize_address_for_database import (
     standardize_address,
@@ -35,7 +32,7 @@ from exceptions.property_search_exceptions import (
     InvalidBBLError,
 )
 from logger_config import logger
-from schemas import Owners, PropertyDetailsResponse
+from schemas import Owners, PropertyDetailsResponse, Violation
 from services.geolocation.address_to_coord import address_to_coord
 
 
@@ -62,7 +59,6 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
     try:
         logger.info(f"Starting property search for BBL: '{bbl}'")
         records_df = db.execute_df("SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.bbl = ? ORDER BY a.documentid", [bbl])
-        # Handle duplicate columns (like 'bbl') from the join
         records_df = records_df.loc[:, ~records_df.columns.duplicated()]
         
         current_owner_data = []
@@ -93,14 +89,10 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             logger.warning(f"Failed to prepare address for geocoding BBL '{bbl}': {e}")
 
 
-        # Bulk fetch other data
-        # 1. DOF Sales
         sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
         
-        # 2. Jobs (and phone numbers)
         jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
         
-        # 3. Violations
         violations_df = db.execute_df(
             """SELECT bbl, violation_status, issue_date, violation_type, description, severity, 
                       penalty_amount, amount_paid, balance_due, respondent_name, house_number, street, city, zip 
@@ -108,28 +100,13 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             [bbl]
         )
         
-        # 4. Zoning
         zoning_df = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
-        
-        # 5. Complaints
-        # Needs address. We have records_df.iloc[0].
+
         std_street_number = records_df.iloc[0].prop_streetnumber
         std_street_name = records_df.iloc[0].prop_streetname
-        
-        # Need to handle potential None/NaN? 
-        # Assuming prop_streetnumber/name are valid if records found, or handle gracefully.
-        
+
         complaints_df = pd.DataFrame()
         if std_street_number and std_street_name:
-             # Standardization logic from helper: 
-             # It just returns house_num, street_name. 
-             # But here we have them from PLUTO/ACRIS?
-             # Let's hope prop_streetnumber matches house_number column format in dob_complaints.
-             
-             # The existing `get_complaints` simply took address and standardized it. 
-             # `search_by_property_bbl` passed `prop_streetnumber + " " + prop_streetname`.
-             # So we can do the same.
-             
              address_for_complaints = f"{std_street_number} {std_street_name}"
 
              std_address_complaints = standardize_address(address_for_complaints)
@@ -141,7 +118,6 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
                 [c_house_num, c_street_name]
              )
 
-        # 6. Phone numbers
         phone_numbers_df = pd.DataFrame()
         if not jobs_df.empty:
             potential_cols = {
@@ -184,12 +160,12 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
 
         return PropertyDetailsResponse(
-            last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types or should_get_last_sold_for_buildings else None,
+            last_sold = last_sold if prop_type not in coop_property_types or should_get_last_sold_for_buildings else None,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
             records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
-            violations=get_violations(bbl, violations_df),
+            violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, complaints_df),
             zoning=get_zoning(bbl, zoning_df),
             coordinates=coordinates,

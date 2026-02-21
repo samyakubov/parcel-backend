@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
-from typing import Optional, TypedDict, List
+from typing import TypedDict
 
 
 @dataclass
@@ -370,9 +370,9 @@ class CensusDemographicData(TypedDict):
     """
     Demographic and economic data from the U.S. Census Bureau's American Community Survey (ACS).
     """
-    population: Optional[int]
-    medianIncome: Optional[int]
-    medianHomeValue: Optional[int]
-    medianRent: Optional[int]
-    medianAge: Optional[float]
-    raceDemographics: List[RaceDemographic]
+    population: int | None
+    medianIncome: int | None
+    medianHomeValue: int | None
+    medianRent: int | None
+    medianAge: float | None
+    raceDemographics: list[RaceDemographic]

@@ -25,27 +25,10 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
     try:
         logger.info(f"--------------------Analyzing complaints for address: '{address}'--------------------")
         
-        # We need to standardize the address to match the query logic, but since we are bulk fetching
-        # using the SAME standardized address in the handlers, the dataframe passed in *should*
-        # ideally already be filtered for this address OR be the full table (unlikely).
-        # Assuming we fetch by address in the main handler, the DF passed here is already filtered.
-        # However, looking at the code, it takes `address`.
-        
-        # If the main handler fetches by address, then `complaints_df` is already the result.
-        # We just need to process it.
-        
         if complaints_df.empty:
              logger.info(f"No complaints found for address: '{address}'.")
              return []
 
-        # The SQL query selected specific columns and renamed them. We need to do that here or expect raw columns.
-        # Let's assume raw columns and rename them to match the schema.
-        
-        # Raw columns from `dob_complaints`:
-        # complaintnumber, dateentered, status, specialdistrict, complaintcategory, 
-        # dispositiondate, dispositioncode, inspectiondate, dobrundate, bin, housenumber, housestreet
-        
-        # Renaming map based on previous SQL
         rename_map = {
             "complaintnumber": "complaint_number",
             "dateentered": "date_entered",
@@ -59,7 +42,6 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
             "bin": "bin"
         }
         
-        # Filter columns that exist
         cols_to_keep = [col for col in rename_map.keys() if col in complaints_df.columns]
         df = complaints_df[cols_to_keep].copy()
         df = df.rename(columns=rename_map)

@@ -29,7 +29,6 @@ def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
     try:
         logger.info(f"--------------------Analyzing building shareholders for BBL: {bbl}--------------------")
         
-        # Filter for relevant transactions
         mask = (
             (acris_df["doc_type"] == 'BOTH RPTT AND RETT') & 
             (acris_df["amount"] > 0) & 
@@ -43,7 +42,6 @@ def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
             )
             return []
 
-        # Prepare for analysis
         transactions["current_owner"] = transactions["party_name"]
         transactions["buy_or_sell"] = transactions["partytype_desc"].apply(
             lambda x: 'BUY' if x == 'GRANTEE/BUYER' else 'SELL'

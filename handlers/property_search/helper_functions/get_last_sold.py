@@ -85,10 +85,6 @@ def _get_latest_sale_record(bbl: str, sales_df: pd.DataFrame) -> LastSold | None
         logger.info(f"No DOF sales records found for BBL: {bbl}")
         return None
 
-    # Assuming sales_df is already filtered for BBL or we filter it here just in case? 
-    # The handler should pass filtered DF ideally, but let's be safe if it's cheap (it is for one BBL).
-    # But wait, if we bulk fetch for one BBL, the DF is only for that BBL.
-    
     latest = sales_df.iloc[-1]
     try:
         sale_price = int(latest.sale_price)
@@ -113,7 +109,6 @@ def _get_latest_deed_record(bbl: str, acris_df: pd.DataFrame) -> LastSold | None
         logger.info(f"No acris records found for BBL: {bbl}")
         return None
 
-    # Filter for DEED, amount > 0, GRANTEE/BUYER
     mask = (
         (acris_df["doc_type"] == 'DEED') &
         (acris_df["amount"] > 0) &
@@ -126,10 +121,6 @@ def _get_latest_deed_record(bbl: str, acris_df: pd.DataFrame) -> LastSold | None
         return None
 
     latest = deeds_df.iloc[0]
-    
-    # Map column names if needed. `get_last_sold` in previous version selected:
-    # amount AS last_sold_price, record_filed AS sale_date, party_name AS deed_party_name
-    # So we should use raw columns from DF: `amount`, `record_filed`, `party_name`
     
     last_sold_price = latest["amount"]
     
@@ -161,14 +152,11 @@ def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, acris_df: pd.Dat
     """Matches a low-price deed with a mortgage."""
     logger.info(f"Attempting to match low-price deed with a mortgage for BBL: {bbl}")
     
-    # Filter for MORTGAGE, MORTGAGOR/BORROWER
     mask = (
         (acris_df["doc_type"] == 'MORTGAGE') &
         (acris_df["partytype_desc"] == 'MORTGAGOR/BORROWER')
     )
     
-    # Group by party_name, max record_filed. 
-    # Equivalent to SELECT party_name, MAX(record_filed) ... GROUP BY party_name ORDER BY ...
     mortgages = acris_df[mask].copy()
     
     if mortgages.empty:
@@ -184,7 +172,6 @@ def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, acris_df: pd.Dat
 
     mortgage_date = latest_mortgages.iloc[0]["record_filed"]
     
-    # Find deed with same date
     matched = deeds_df[deeds_df["record_filed"] == mortgage_date]
 
     if matched.empty:

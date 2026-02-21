@@ -21,14 +21,12 @@ def get_mortgage(
     if acris_df.empty:
         return None
 
-    # Filter for MORTGAGE
     mask = (acris_df["doc_type"] == 'MORTGAGE')
     df = acris_df[mask].copy()
     
     if df.empty:
         return None
         
-    # Sort by record_filed DESC to match SQL ORDER BY
     df = df.sort_values(by="record_filed", ascending=False)
 
     mortgage_records = df.to_dict("records")

@@ -33,7 +33,6 @@ def get_previous_home_owners(
     try:
         logger.info(f"--------------------Analyzing previous home owners of BBL: {bbl}--------------------")
         
-        # 1. DEEDS
         mask = (
             (acris_df["doc_type"] == 'DEED') & 
             (acris_df["partytype_desc"].isin(['GRANTEE/BUYER', 'GRANTOR/SELLER']))
@@ -52,7 +51,6 @@ def get_previous_home_owners(
 
         logger.info(f"No previous owners found from deed records for BBL {bbl}")
         
-        # 2. MORTGAGES
         mask_mortgage = (acris_df["doc_type"] == 'MORTGAGE')
         mortgages = acris_df[mask_mortgage].sort_values(by="record_filed", ascending=False)
         

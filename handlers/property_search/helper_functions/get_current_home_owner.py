@@ -33,17 +33,14 @@ def get_current_home_owner(
     try:
         logger.info(f"--------------------Searching for current home owner of BBL: {bbl}--------------------")
         
-        # 1. Look for latest DEED
         deeds = acris_df[acris_df["doc_type"] == "DEED"].copy()
         
         if not deeds.empty:
-            # Sort by record_filed DESC
             deeds = deeds.sort_values(by="record_filed", ascending=False)
             latest_deed_doc_id = deeds.iloc[0]["documentid"]
             
             logger.info(f"Found latest deed document with ID {latest_deed_doc_id} for BBL {bbl}")
             
-            # Get parties for this doc where partytype is GRANTEE/BUYER
             deed_buyers = deeds[
                 (deeds["documentid"] == latest_deed_doc_id) & 
                 (deeds["partytype_desc"] == "GRANTEE/BUYER")
@@ -58,7 +55,6 @@ def get_current_home_owner(
 
         logger.info(f"No definitive owner found from deed records for BBL {bbl}")
         
-        # 2. Look for latest MORTGAGE
         mortgages = acris_df[acris_df["doc_type"] == "MORTGAGE"].copy()
         
         if not mortgages.empty:
