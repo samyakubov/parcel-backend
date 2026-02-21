@@ -14,6 +14,7 @@ from routes.census import census_routes
 from routes.database import database_routes
 from routes.party import party_routes
 from routes.property import property_routes
+from routes.heatmap import heatmap_routes
 
 load_dotenv()
 
@@ -61,3 +62,4 @@ app.include_router(admin_routes)
 app.include_router(database_routes)
 app.include_router(ai_routes)
 app.include_router(census_routes)
+app.include_router(heatmap_routes)

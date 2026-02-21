@@ -420,3 +420,23 @@ class CensusDemographicData(TypedDict):
     medianRent: int | None
     medianAge: float | None
     raceDemographics: list[RaceDemographic]
+
+
+class ZipCodeHeatmapItem(BaseModel):
+    """
+    Represents aggregated heatmap data for a single ZIP code.
+    """
+    zip_code: str
+    num_sales: int
+    median_price: float
+    avg_price: float
+    median_price_per_sqft: float | None
+
+
+class HeatmapResponse(BaseModel):
+    """
+    Response model for the ZIP code heatmap endpoint.
+    """
+    data: list[ZipCodeHeatmapItem]
+    start_date: str | None = None
+    end_date: str | None = None
