@@ -1,7 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
+
 import pandas as pd
+
 from database_connector import DatabaseConnector
-from handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
+from exceptions.property_search_exceptions import (
+    AddressNotFoundError,
+    InvalidAddressError,
+)
 from handlers.property_search.helper_functions.get_building_shareholders import (
     get_building_shareholders,
 )
@@ -22,10 +27,7 @@ from handlers.property_search.helper_functions.get_previous_owners import (
     get_previous_home_owners,
 )
 from handlers.property_search.helper_functions.get_zoning import get_zoning
-from exceptions.property_search_exceptions import (
-    AddressNotFoundError,
-    InvalidAddressError,
-)
+from handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
 from schemas import Owners, PropertyDetailsResponse, Violation
 from services.geolocation.address_to_coord import address_to_coord
@@ -94,32 +96,32 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         )
 
         sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
-        
+
         jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
         logger.info(f"--------------------Retrieving violations for BBL: {bbl}--------------------")
 
         violations_df = db.execute_df(
             """SELECT bbl, violation_status, issue_date, violation_type, description, severity, 
                       penalty_amount, amount_paid, balance_due, respondent_name, house_number, street, city, zip 
-               FROM aggregated_acris_violations WHERE bbl = ?""", 
+               FROM aggregated_acris_violations WHERE bbl = ?""",
             [bbl]
         )
         logger.info(f"--------------------Found {len(violations_df)} violations for BBL: {bbl}--------------------\n")
 
         zoning_df = db.execute_df("SELECT * FROM zoning WHERE bbl = ?", [bbl])
-        
+
         std_address = standardize_address(address)
         house_num = std_address.split(" ")[0]
         street_name = " ".join(std_address.split(" ")[1:])
         complaints_df = db.execute_df(
-            "SELECT * FROM dob_complaints WHERE housenumber = ? AND housestreet = ?", 
+            "SELECT * FROM dob_complaints WHERE housenumber = ? AND housestreet = ?",
             [house_num, street_name]
         )
 
         phone_numbers_df = pd.DataFrame()
         if not jobs_df.empty:
             potential_cols = {
-                "ownername": "owner_full_name", 
+                "ownername": "owner_full_name",
                 "OwnersPhone": "owners_phone"
             }
             cols_to_use = [c for c in potential_cols.keys() if c in jobs_df.columns]
@@ -144,11 +146,11 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         except Exception as e:
             logger.warning(f"Failed to get coordinates for address '{address}': {e}")
             coordinates = None
-        
+
         executor.shutdown(wait=False)
 
         last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
-        
+
         return PropertyDetailsResponse(
             last_sold=last_sold,
             owners=owners,

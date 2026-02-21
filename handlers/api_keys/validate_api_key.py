@@ -1,8 +1,8 @@
 from fastapi import Depends, Header
 
 from database_connector import DatabaseConnector, get_db
-from handlers.api_keys.update_key import update_last_used
 from exceptions.api_key_exceptions import InvalidApiKeyError, MissingApiKeyError
+from handlers.api_keys.update_key import update_last_used
 from logger_config import logger
 
 

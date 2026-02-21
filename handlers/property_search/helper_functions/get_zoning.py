@@ -1,4 +1,5 @@
 import pandas as pd
+
 from exceptions.property_search_exceptions import InvalidBBLError
 from logger_config import logger
 from schemas import Zoning
@@ -19,9 +20,9 @@ def get_zoning(bbl: str, zoning_df: pd.DataFrame) -> Zoning | None:
     """
     if not bbl:
         raise InvalidBBLError
-    
+
     logger.info(f"--------------------Processing zoning information for BBL: {bbl}--------------------")
-    
+
     if zoning_df.empty:
         logger.info(f"No zoning information found for BBL: {bbl}")
         return None

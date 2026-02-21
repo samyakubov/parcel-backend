@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
-from typing import TypedDict
 
 
 @dataclass

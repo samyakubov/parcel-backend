@@ -45,9 +45,9 @@ def get_census_data_by_bbl(bbl: str, db: DatabaseConnector = Depends(get_db)):
         HTTPException: If the BBL is not found or address cannot be geocoded.
     """
     query = """
-    SELECT prop_streetnumber, prop_streetname 
-    FROM aggregated_acris_records 
-    WHERE bbl = ? 
+    SELECT prop_streetnumber, prop_streetname
+    FROM aggregated_acris_records
+    WHERE bbl = ?
     LIMIT 1
     """
     df = db.execute_df(query, [bbl])

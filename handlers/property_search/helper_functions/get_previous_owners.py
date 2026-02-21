@@ -1,4 +1,5 @@
 import pandas as pd
+
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
@@ -32,13 +33,13 @@ def get_previous_home_owners(
 
     try:
         logger.info(f"--------------------Analyzing previous home owners of BBL: {bbl}--------------------")
-        
+
         mask = (
-            (acris_df["doc_type"] == 'DEED') & 
+            (acris_df["doc_type"] == 'DEED') &
             (acris_df["partytype_desc"].isin(['GRANTEE/BUYER', 'GRANTOR/SELLER']))
         )
         deed_records = acris_df[mask].sort_values(by="record_filed", ascending=False)
-        
+
         if not deed_records.empty:
             logger.info(f"Found {len(deed_records)} deed records for BBL {bbl}")
             deed_owners = deed_records["party_name"].tolist()
@@ -50,22 +51,22 @@ def get_previous_home_owners(
             return match_phone_numbers_to_owner(phone_numbers_df, unique_owners)
 
         logger.info(f"No previous owners found from deed records for BBL {bbl}")
-        
+
         mask_mortgage = (acris_df["doc_type"] == 'MORTGAGE')
         mortgages = acris_df[mask_mortgage].sort_values(by="record_filed", ascending=False)
-        
+
         if not mortgages.empty:
             latest_mortgage_doc_id = mortgages.iloc[0]["documentid"]
-            
+
             logger.info(
                 f"Found latest mortgage document with ID {latest_mortgage_doc_id} for BBL {bbl}. Fetching mortgagor records."
             )
-            
+
             mortgage_records = mortgages[
-                 (mortgages["documentid"] == latest_mortgage_doc_id) & 
+                 (mortgages["documentid"] == latest_mortgage_doc_id) &
                  (mortgages["partytype_desc"] == "MORTGAGOR/BORROWER")
             ]
-            
+
             if not mortgage_records.empty:
                 mortgage_owners = mortgage_records["party_name"].tolist()
                 seen = set()

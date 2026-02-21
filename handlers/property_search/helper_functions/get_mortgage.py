@@ -1,4 +1,5 @@
 from datetime import datetime
+
 import pandas as pd
 
 from schemas import LastSold, MortgageRecord
@@ -23,10 +24,10 @@ def get_mortgage(
 
     mask = (acris_df["doc_type"] == 'MORTGAGE')
     df = acris_df[mask].copy()
-    
+
     if df.empty:
         return None
-        
+
     df = df.sort_values(by="record_filed", ascending=False)
 
     mortgage_records = df.to_dict("records")

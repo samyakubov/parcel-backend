@@ -1,8 +1,5 @@
 import pandas as pd
 
-from handlers.property_search.helper_functions.standardize_address_for_database import (
-    standardize_address,
-)
 from logger_config import logger
 from schemas import Complaint
 
@@ -24,7 +21,7 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
 
     try:
         logger.info(f"--------------------Analyzing complaints for address: '{address}'--------------------")
-        
+
         if complaints_df.empty:
              logger.info(f"No complaints found for address: '{address}'.")
              return []
@@ -41,7 +38,7 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
             "dobrundate": "dobrun_date",
             "bin": "bin"
         }
-        
+
         cols_to_keep = [col for col in rename_map.keys() if col in complaints_df.columns]
         df = complaints_df[cols_to_keep].copy()
         df = df.rename(columns=rename_map)
@@ -53,7 +50,7 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
 
         if "date_entered" in df.columns:
             df = df.sort_values("date_entered", ascending=False)
-            
+
         logger.info(f"--------------------Found {len(df)} complaints for address: '{address}'--------------------\n")
         return df.to_dict(orient="records")
     except Exception as e:

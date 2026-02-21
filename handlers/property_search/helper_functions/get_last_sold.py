@@ -1,4 +1,5 @@
 import pandas as pd
+
 from exceptions.property_search_exceptions import InvalidBBLError
 from logger_config import logger
 from schemas import LastSold
@@ -25,10 +26,10 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
         raise InvalidBBLError
     try:
         logger.info(f"--------------------Analyzing last sold information for BBL: {bbl}--------------------")
-        
+
         sale_data = _get_latest_sale_record(bbl, sales_df)
         deed_data = _get_latest_deed_record(bbl, acris_df)
-        
+
         sale_date = sale_data.last_sold_date if sale_data else None
         deed_date = deed_data.last_sold_date if deed_data else None
 
@@ -80,7 +81,7 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
 def _get_latest_sale_record(bbl: str, sales_df: pd.DataFrame) -> LastSold | None:
     """Gets the latest sale record for a given BBL."""
     logger.info(f"Scanning latest sale record for BBL: {bbl}")
-    
+
     if sales_df.empty:
         logger.info(f"No DOF sales records found for BBL: {bbl}")
         return None
@@ -104,7 +105,7 @@ def _get_latest_sale_record(bbl: str, sales_df: pd.DataFrame) -> LastSold | None
 def _get_latest_deed_record(bbl: str, acris_df: pd.DataFrame) -> LastSold | None:
     """Gets the latest deed record for a given BBL."""
     logger.info(f"Scanning latest deed record for BBL: {bbl}")
-    
+
     if acris_df.empty:
         logger.info(f"No acris records found for BBL: {bbl}")
         return None
@@ -121,9 +122,9 @@ def _get_latest_deed_record(bbl: str, acris_df: pd.DataFrame) -> LastSold | None
         return None
 
     latest = deeds_df.iloc[0]
-    
+
     last_sold_price = latest["amount"]
-    
+
     logger.info(f"Found latest deed record for BBL {bbl} with price ${last_sold_price}")
 
     if last_sold_price < 1000:
@@ -151,27 +152,27 @@ def _handle_low_price_deed_case(
 def _match_deed_with_mortgage(bbl: str, deeds_df: pd.DataFrame, acris_df: pd.DataFrame) -> LastSold | None:
     """Matches a low-price deed with a mortgage."""
     logger.info(f"Attempting to match low-price deed with a mortgage for BBL: {bbl}")
-    
+
     mask = (
         (acris_df["doc_type"] == 'MORTGAGE') &
         (acris_df["partytype_desc"] == 'MORTGAGOR/BORROWER')
     )
-    
+
     mortgages = acris_df[mask].copy()
-    
+
     if mortgages.empty:
          logger.info(f"No mortgage record found to match with deed for BBL: {bbl}")
          return None
-         
+
     latest_mortgages = mortgages.groupby("party_name")["record_filed"].max().reset_index()
     latest_mortgages = latest_mortgages.sort_values(by="record_filed", ascending=False)
-    
+
     if latest_mortgages.empty:
         logger.info(f"No mortgage record found to match with deed for BBL: {bbl}")
         return None
 
     mortgage_date = latest_mortgages.iloc[0]["record_filed"]
-    
+
     matched = deeds_df[deeds_df["record_filed"] == mortgage_date]
 
     if matched.empty:

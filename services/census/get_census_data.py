@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 from schemas import CensusDemographicData, RaceDemographic
 
 

@@ -1,4 +1,5 @@
 import pandas as pd
+
 from logger_config import logger
 
 
@@ -19,7 +20,7 @@ def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
     if not bbl:
         logger.error("BBL is required to get building shareholders, but none was provided.")
         return []
-    
+
     if acris_df.empty:
          logger.warning(
             f"--------------------No shareholder transactions found for BBL: {bbl}--------------------\n"
@@ -28,10 +29,10 @@ def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
 
     try:
         logger.info(f"--------------------Analyzing building shareholders for BBL: {bbl}--------------------")
-        
+
         mask = (
-            (acris_df["doc_type"] == 'BOTH RPTT AND RETT') & 
-            (acris_df["amount"] > 0) & 
+            (acris_df["doc_type"] == 'BOTH RPTT AND RETT') &
+            (acris_df["amount"] > 0) &
             (acris_df["partytype_desc"].isin(['GRANTEE/BUYER', 'GRANTOR/SELLER']))
         )
         transactions = acris_df[mask].copy()
@@ -51,11 +52,11 @@ def get_building_shareholders(bbl: str, acris_df: pd.DataFrame) -> list[str]:
         logger.info(
             f"Found {len(transactions)} shareholder transactions for BBL: {bbl}. Analyzing ownership status."
         )
-        
+
         latest_per_party = transactions.groupby(
             ["current_owner", "buy_or_sell"], as_index=False
         ).transaction_date.max()
-        
+
         buy = latest_per_party[latest_per_party["buy_or_sell"] == "BUY"]
         sell = latest_per_party[latest_per_party["buy_or_sell"] == "SELL"]
 

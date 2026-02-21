@@ -1,4 +1,5 @@
 import pandas as pd
+
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
 
@@ -23,7 +24,7 @@ def get_current_home_owner(
     if not bbl:
         logger.error(f"Invalid BBL provided: '{bbl}'.")
         return []
-    
+
     if acris_df.empty:
          logger.warning(
             f"--------------------No records found for BBL: {bbl}--------------------\n"
@@ -32,20 +33,20 @@ def get_current_home_owner(
 
     try:
         logger.info(f"--------------------Searching for current home owner of BBL: {bbl}--------------------")
-        
+
         deeds = acris_df[acris_df["doc_type"] == "DEED"].copy()
-        
+
         if not deeds.empty:
             deeds = deeds.sort_values(by="record_filed", ascending=False)
             latest_deed_doc_id = deeds.iloc[0]["documentid"]
-            
+
             logger.info(f"Found latest deed document with ID {latest_deed_doc_id} for BBL {bbl}")
-            
+
             deed_buyers = deeds[
-                (deeds["documentid"] == latest_deed_doc_id) & 
+                (deeds["documentid"] == latest_deed_doc_id) &
                 (deeds["partytype_desc"] == "GRANTEE/BUYER")
             ]
-            
+
             if not deed_buyers.empty:
                 owners = list(set(deed_buyers["party_name"].tolist()))
                 logger.info(
@@ -54,20 +55,20 @@ def get_current_home_owner(
                 return match_phone_numbers_to_owner(phone_numbers_df, owners)
 
         logger.info(f"No definitive owner found from deed records for BBL {bbl}")
-        
+
         mortgages = acris_df[acris_df["doc_type"] == "MORTGAGE"].copy()
-        
+
         if not mortgages.empty:
              mortgages = mortgages.sort_values(by="record_filed", ascending=False)
              latest_mortgage_doc_id = mortgages.iloc[0]["documentid"]
 
              logger.info(f"Found latest mortgage document with ID {latest_mortgage_doc_id} for BBL {bbl}")
-             
+
              mortgage_borrowers = mortgages[
-                 (mortgages["documentid"] == latest_mortgage_doc_id) & 
+                 (mortgages["documentid"] == latest_mortgage_doc_id) &
                  (mortgages["partytype_desc"] == "MORTGAGOR/BORROWER")
              ]
-             
+
              if not mortgage_borrowers.empty:
                 owners = list(set(mortgage_borrowers["party_name"].tolist()))
                 logger.info(

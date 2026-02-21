@@ -1,7 +1,9 @@
 import os
 from collections.abc import Generator
+
 import duckdb
 import pandas as pd
+
 from logger_config import logger
 
 

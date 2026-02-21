@@ -1,4 +1,5 @@
 import pandas as pd
+
 from logger_config import logger
 from schemas import JobFiled
 
@@ -17,7 +18,7 @@ def get_job_filings(bbl: str, jobs_df: pd.DataFrame) -> list[JobFiled]:
     if not bbl:
         logger.warning("Attempted to get job filings without a BBL.")
         return []
-        
+
     if jobs_df.empty:
         logger.info(f"--------------------No job filings found for BBL: {bbl}--------------------\n")
         return []
@@ -44,12 +45,12 @@ def get_job_filings(bbl: str, jobs_df: pd.DataFrame) -> list[JobFiled]:
 
         df = jobs_df.copy()
         df = df.rename(columns=rename_map)
-        
+
         output_cols = [
             "job_description", "bin", "job_status", "job_type",
             "applicant_first_name", "applicant_last_name", "applicant_professional_title"
         ]
-        
+
         final_cols = [c for c in output_cols if c in df.columns]
         df = df[final_cols]
 

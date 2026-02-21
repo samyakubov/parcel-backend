@@ -6,6 +6,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.cors import CORSMiddleware
 
+from exception_handlers import register_exception_handlers
 from routes.admin import admin_routes
 from routes.ai import ai_routes
 from routes.api_keys import api_key_routes
@@ -13,7 +14,6 @@ from routes.census import census_routes
 from routes.database import database_routes
 from routes.party import party_routes
 from routes.property import property_routes
-from exception_handlers import register_exception_handlers
 
 load_dotenv()
 
