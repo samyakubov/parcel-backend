@@ -1,7 +1,9 @@
 import os
 from collections.abc import Generator
+
 import duckdb
 import pandas as pd
+
 from logger_config import logger
 
 
@@ -99,7 +101,16 @@ class DatabaseConnector:
 
 
 def get_db() -> Generator[DatabaseConnector, None, None]:
-    db = DatabaseConnector(os.getenv("DATABASE_PATH"))
+    """FastAPI dependency that yields a connected DatabaseConnector and ensures
+    the connection is closed after the request, even if an exception is raised.
+
+    Raises:
+        DatabaseError: If the connection to the database fails.
+    """
+    db_path = os.getenv("DATABASE_PATH")
+    if not db_path:
+        logger.warning("DATABASE_PATH environment variable is not set; connecting to None path.")
+    db = DatabaseConnector(db_path)
     try:
         yield db
     finally:
