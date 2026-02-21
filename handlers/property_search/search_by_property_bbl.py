@@ -78,7 +78,6 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         prop_type = records_df.iloc[0].prop_type
         logger.info(f"Found {len(records_df)} records for BBL '{bbl}' with property type '{prop_type}'.")
 
-        # Parallel geocoding start
         future_coords = None
         try:
             address_str = add_ordinal_to_street_number(

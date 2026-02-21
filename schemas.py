@@ -127,6 +127,50 @@ class PropertyRecord(BaseModel):
             return v.strftime("%Y-%m-%d")
         return v
 
+    @field_validator(
+        "num_floors", "lot_front", "lot_depth", "bldg_front", "bldg_depth",
+        mode="before",
+    )
+    @classmethod
+    def convert_nan_floats(cls, v):
+        """Convert NaN float values (from pandas LEFT JOIN nulls) to None"""
+        try:
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        return v
+
+    @field_validator("amount", mode="before")
+    @classmethod
+    def convert_nan_amount(cls, v):
+        """Convert NaN amount to 0.0 (amount is a required non-optional float)"""
+        try:
+            if pd.isna(v):
+                return 0.0
+        except (TypeError, ValueError):
+            pass
+        return v
+
+    @field_validator(
+        "school_dist", "council", "land_use", "lot_area", "bldg_area", "com_area",
+        "res_area", "office_area", "retail_area", "garage_area", "strge_area",
+        "factry_area", "other_area", "num_bldgs", "units_res", "units_total",
+        "assess_land", "assess_tot", "exempt_tot", "year_built",
+        mode="before",
+    )
+    @classmethod
+    def convert_nan_ints(cls, v):
+        """Convert NaN values (from pandas LEFT JOIN nulls) to None for int fields"""
+        try:
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
+        if isinstance(v, float) and v == int(v):
+            return int(v)
+        return v
+
 
 class LastSold(BaseModel):
     """Response model for a last sold message."""
