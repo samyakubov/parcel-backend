@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pandas as pd
 
 from database_connector import DatabaseConnector
