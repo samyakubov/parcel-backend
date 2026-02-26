@@ -23,22 +23,28 @@ from handlers.property_search.helper_functions.get_last_sold import (
     get_last_sold,
 )
 from handlers.property_search.helper_functions.get_mortgage import get_mortgage
+from handlers.property_search.helper_functions.get_phone_number_by_bbl import (
+    extract_phone_numbers,
+)
 from handlers.property_search.helper_functions.get_previous_owners import (
     get_previous_home_owners,
 )
 from handlers.property_search.helper_functions.get_zoning import get_zoning
 from handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
-from schemas import Owners, PropertyDetailsResponse, Violation
+from schemas import Coordinates, Owners, PropertyDetailsResponse, Violation
 from services.geolocation.address_to_coord import address_to_coord
 
 
-def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyDetailsResponse:
+def search_by_property_address(
+    address: str, db: DatabaseConnector, coordinates: Coordinates | None = None
+) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
         address: The address of the property to search for.
         db: The database connector instance.
+        coordinates: Optional pre-resolved coordinates (skips forward geocoding when provided).
 
     Raises:
         InvalidAddressError: If the address is invalid.
@@ -54,8 +60,11 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         logger.warning("An attempt was made to search for a property without providing an address.")
         raise InvalidAddressError("Address cannot be empty")
 
-    executor = ThreadPoolExecutor(max_workers=1)
-    future_coords = executor.submit(address_to_coord, address)
+    future_coords = None
+    executor = None
+    if coordinates is None:
+        executor = ThreadPoolExecutor(max_workers=1)
+        future_coords = executor.submit(address_to_coord, address)
 
     try:
         logger.info(
@@ -141,13 +150,13 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
 
-        try:
-            coordinates = future_coords.result(timeout=5)
-        except Exception as e:
-            logger.warning(f"Failed to get coordinates for address '{address}': {e}")
-            coordinates = None
-
-        executor.shutdown(wait=False)
+        if future_coords is not None:
+            try:
+                coordinates = future_coords.result(timeout=5)
+            except Exception as e:
+                logger.warning(f"Failed to get coordinates for address '{address}': {e}")
+                coordinates = None
+            executor.shutdown(wait=False)
 
         last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
 
