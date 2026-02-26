@@ -1,7 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
-
-import pandas as pd
-
 from database_connector import DatabaseConnector
 from exceptions.property_search_exceptions import (
     AddressNotFoundError,
@@ -60,58 +56,60 @@ def search_by_property_address(
         logger.warning("An attempt was made to search for a property without providing an address.")
         raise InvalidAddressError("Address cannot be empty")
 
-    future_coords = None
-    executor = None
-    if coordinates is None:
-        executor = ThreadPoolExecutor(max_workers=1)
-        future_coords = executor.submit(address_to_coord, address)
-
     try:
         logger.info(
             f"--------------------------Starting property search for address: '{address}'--------------------------"
         )
-        records_df = db.execute_df(
-            "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.search_prop_address = ? ORDER BY a.documentid",
+
+        # Combined BBL lookup + bulk ACRIS fetch in one query (single scan of aggregated_acris_records)
+        acris_df = db.execute_df(
+            "SELECT * FROM aggregated_acris_records WHERE bbl = (SELECT bbl FROM aggregated_acris_records WHERE search_prop_address = ? LIMIT 1)",
             [address.upper()],
         )
-        records_df = records_df.loc[:, ~records_df.columns.duplicated()]
 
-        current_owner_data = []
-
-        coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
-
-        if records_df.empty:
+        if acris_df.empty:
             logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
             parts = address.strip().split(" ", 1)
             if len(parts) == 2:
                 house_number, street = parts
-                records_df = db.execute_df(
-                    "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
+                acris_df = db.execute_df(
+                    "SELECT * FROM aggregated_acris_records WHERE bbl = (SELECT bbl FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? LIMIT 1)",
                     [house_number, f"{street.replace(' ', '%').upper()}%"],
                 )
-                records_df = records_df.loc[:, ~records_df.columns.duplicated()]
 
-            if records_df.empty:
+            if acris_df.empty:
                 logger.warning(f"No records found for address: '{address}' after lenient search.")
                 raise AddressNotFoundError(f"No records found for address: {address}")
 
-        if "search_prop_address" in records_df.columns:
-            records_df = records_df.drop(columns=["search_prop_address"])
+        bbl = acris_df.iloc[0]["bbl"]
 
-        bbl = records_df.iloc[0].bbl
-        prop_type = records_df.iloc[0].prop_type
+        # Small pluto lookup (one row per BBL, fast)
+        pluto_df = db.execute_df(
+            "SELECT * FROM pluto_latest WHERE bbl = ?", [bbl]
+        )
+
+        # Build response records by merging ACRIS + pluto in Python (replaces SQL JOIN)
+        if not pluto_df.empty:
+            records_df = acris_df.merge(pluto_df, on="bbl", how="left")
+        else:
+            records_df = acris_df.copy()
+        records_df = records_df.drop(columns=["search_prop_address"], errors="ignore")
+
+        prop_type = acris_df.iloc[0]["prop_type"]
+        current_owner_data = []
+
+        coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
+
         logger.info(
-            f"Found {len(records_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n"
+            f"Found {len(acris_df)} records for address '{address}' with BBL {bbl} and property type '{prop_type}'\n"
         )
 
         sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
 
-        jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
         logger.info(f"--------------------Retrieving violations for BBL: {bbl}--------------------")
-
         violations_df = db.execute_df(
-            """SELECT bbl, violation_status, issue_date, violation_type, description, severity, 
-                      penalty_amount, amount_paid, balance_due, respondent_name, house_number, street, city, zip 
+            """SELECT bbl, violation_status, issue_date, violation_type, description, severity,
+                      penalty_amount, amount_paid, balance_due, respondent_name, house_number, street, city, zip
                FROM aggregated_acris_violations WHERE bbl = ?""",
             [bbl]
         )
@@ -127,36 +125,44 @@ def search_by_property_address(
             [house_num, street_name]
         )
 
-        phone_numbers_df = pd.DataFrame()
-        if not jobs_df.empty:
-            potential_cols = {
-                "ownername": "owner_full_name",
-                "OwnersPhone": "owners_phone"
-            }
-            cols_to_use = [c for c in potential_cols.keys() if c in jobs_df.columns]
-            if len(cols_to_use) == 2:
-                phone_numbers_df = jobs_df[cols_to_use].rename(columns=potential_cols)
+        # Bulk fetch all dobjobs records for this BBL
+        dobjobs_df = db.execute_df(
+            """SELECT
+                jobdescription as job_description,
+                bin as bin,
+                jobstatus as job_status,
+                jobtype as job_type,
+                ApplicantsFirstName as applicant_first_name,
+                ApplicantsLastName as applicant_last_name,
+                ApplicantProfessionalTitle as applicant_professional_title,
+                ownersphone as owners_phone,
+                ownersfirstname as owners_first_name,
+                ownerslastname as owners_last_name
+            FROM dobjobs WHERE bbl = ?""",
+            [bbl],
+        )
 
+        # Extract phone data from dobjobs
+        phone_df = extract_phone_numbers(dobjobs_df)
 
         if prop_type in coop_property_types:
-            current_owner_data = get_building_shareholders(bbl, records_df)
+            current_owner_data = get_building_shareholders(bbl, acris_df)
 
         if len(current_owner_data) == 0:
-            current_owner_data = get_current_home_owner(bbl, records_df, phone_numbers_df)
+            current_owner_data = get_current_home_owner(bbl, acris_df, phone_df)
 
-        all_previous_data = get_previous_home_owners(bbl, records_df, phone_numbers_df)
+        all_previous_data = get_previous_home_owners(bbl, acris_df, phone_df)
         owners = Owners(
             current_owners=current_owner_data,
             previous_owners=[item for item in all_previous_data if item not in current_owner_data],
         )
 
-        if future_coords is not None:
+        if coordinates is None:
             try:
-                coordinates = future_coords.result(timeout=5)
+                coordinates = address_to_coord(address)
             except Exception as e:
                 logger.warning(f"Failed to get coordinates for address '{address}': {e}")
                 coordinates = None
-            executor.shutdown(wait=False)
 
         last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
 
@@ -165,7 +171,7 @@ def search_by_property_address(
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
             records=records_df.sort_values(by="record_filed", ascending=False).astype(object).where(records_df.notna(), None).to_dict(orient="records"),
-            job_filings=get_job_filings(bbl, jobs_df),
+            job_filings=get_job_filings(bbl, dobjobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(address, complaints_df),
             zoning=get_zoning(bbl, zoning_df),
