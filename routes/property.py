@@ -8,7 +8,7 @@ from handlers.property_search.search_by_property_address import (
 from handlers.property_search.search_by_property_bbl import (
     search_by_property_bbl,
 )
-from schemas import PropertyDetailsResponse
+from schemas import Coordinates, PropertyDetailsResponse
 from services.geolocation.coord_to_address import coord_to_address
 
 property_routes = APIRouter(prefix="/property")
@@ -68,5 +68,6 @@ def search_by_fuzz_coords(
     Returns:
         PropertyDetailsResponse: A response object containing the property information.
     """
-    address = coord_to_address(float(lat), float(long))["address"]
-    return search_by_property_address(address, db)
+    lat_f, long_f = float(lat), float(long)
+    address = coord_to_address(lat_f, long_f)["address"]
+    return search_by_property_address(address, db, coordinates=Coordinates(latitude=lat_f, longitude=long_f))

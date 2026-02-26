@@ -55,6 +55,7 @@ def get_job_filings(bbl: str, jobs_df: pd.DataFrame) -> list[JobFiled]:
         df = df[final_cols]
 
         logger.info(f"--------------------Found {len(df)} job filings for BBL: {bbl}--------------------\n")
+        job_filings_df = job_filings_df.astype(object).where(job_filings_df.notna(), None)
         return df.to_dict(orient="records")
     except Exception as e:
         logger.error(f"An unexpected error occurred while fetching job filings for BBL {bbl}: {e}", exc_info=True)

@@ -164,7 +164,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
             last_sold = last_sold if prop_type not in coop_property_types or should_get_last_sold_for_buildings else None,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
-            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            records=records_df.sort_values(by="record_filed", ascending=False).astype(object).where(records_df.notna(), None).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, complaints_df),

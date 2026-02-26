@@ -52,6 +52,7 @@ def get_complaints(address: str, complaints_df: pd.DataFrame) -> list[Complaint]
             df = df.sort_values("date_entered", ascending=False)
 
         logger.info(f"--------------------Found {len(df)} complaints for address: '{address}'--------------------\n")
+        df = df.astype(object).where(df.notna(), None)
         return df.to_dict(orient="records")
     except Exception as e:
         logger.error(

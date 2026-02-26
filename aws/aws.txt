@@ -1,7 +1,7 @@
 1. Setup a default AWS EC2 instance (Ubuntu, t3.medium, 30GB of storage, for the DuckDB file)
 2. Get a .pem file for the instance
 3. chmod 400 ~/path/to/your-key.pem
-4. ssh -i ssh -i ~/Documents/parcel-keypair.pem ubuntu@54.160.148.39
+ssh -i ssh -i ~/Documents/parcel-keypair.pem ubuntu@54.160.148.39
 Run:
 # Update packages
 1. sudo apt update && sudo apt upgrade -y
@@ -36,6 +36,9 @@ detach with Ctrl+B, then D.
 
 To reattach to the server session (if you need to check logs, etc.):
 tmux attach -t server
+
+To scroll through the logs:
+Ctrl+B, then [
 
 To stop the server:
 tmux attach -t server

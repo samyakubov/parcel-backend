@@ -155,7 +155,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             last_sold=last_sold,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
-            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            records=records_df.sort_values(by="record_filed", ascending=False).astype(object).where(records_df.notna(), None).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(address, complaints_df),
