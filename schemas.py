@@ -192,7 +192,12 @@ class LastSold(BaseModel):
     @field_validator("year_built", "land_sqft", "gross_sqft", mode="before")
     @classmethod
     def convert_numpy_int(cls, v):
-        """Convert numpy int32 to Python int"""
+        """Convert numpy int32 to Python int, and pandas NA to None"""
+        try:
+            if pd.isna(v):
+                return None
+        except (TypeError, ValueError):
+            pass
         if isinstance(v, (np.integer, np.int32, np.int64)):
             return int(v)
         return v
