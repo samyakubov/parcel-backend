@@ -33,9 +33,10 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
             return None
 
         # Stats: DOF sales first, PLUTO as fallback
-        year_built = (sale.get("year_built") if sale else None) or pluto.get("year_built")
-        land_sqft = (sale.get("land_sqft") if sale else None) or pluto.get("land_sqft")
-        gross_sqft = (sale.get("gross_sqft") if sale else None) or pluto.get("gross_sqft")
+        sale_stats = sale or {}
+        year_built, land_sqft, gross_sqft = (
+            sale_stats.get(k) or pluto.get(k) for k in ("year_built", "land_sqft", "gross_sqft")
+        )
 
         return LastSold(
             last_sold_price=price,
@@ -44,8 +45,6 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
             land_sqft=land_sqft,
             gross_sqft=gross_sqft,
         )
-    except InvalidBBLError:
-        raise
     except Exception as e:
         logger.error(f"Unexpected error in get_last_sold for BBL {bbl}: {e}", exc_info=True)
         return None
@@ -72,11 +71,7 @@ def _get_best_deed_price(acris_df: pd.DataFrame) -> tuple[int, object] | None:
     if acris_df.empty:
         return None
 
-    mask = (
-        (acris_df["doc_type"] == "DEED") &
-        (acris_df["amount"] > 0) &
-        (acris_df["partytype_desc"] == "GRANTEE/BUYER")
-    )
+    mask = (acris_df["doc_type"] == "DEED") & (acris_df["amount"] > 0) & (acris_df["partytype_desc"] == "GRANTEE/BUYER")
     deeds = acris_df[mask].sort_values("record_filed", ascending=False)
 
     if deeds.empty:
@@ -101,16 +96,17 @@ def _get_best_deed_price(acris_df: pd.DataFrame) -> tuple[int, object] | None:
 
 
 def _price_from_mortgage(deeds: pd.DataFrame, acris_df: pd.DataFrame) -> tuple[int, object] | None:
+    buyer = deeds.iloc[0]["party_name"]
     mortgages = acris_df[
-        (acris_df["doc_type"] == "MORTGAGE") &
-        (acris_df["partytype_desc"] == "MORTGAGOR/BORROWER")
+        (acris_df["doc_type"] == "MORTGAGE")
+        & (acris_df["partytype_desc"] == "MORTGAGOR/BORROWER")
+        & (acris_df["party_name"] == buyer)
     ]
     if mortgages.empty:
         return None
 
-    latest_mortgage_date = mortgages.groupby("party_name")["record_filed"].max().max()
+    latest_mortgage_date = mortgages["record_filed"].max()
     matched = deeds[deeds["record_filed"] == latest_mortgage_date]
-
     if matched.empty:
         return None
 

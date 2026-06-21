@@ -84,9 +84,12 @@ class DatabaseConnector:
         """
         try:
             conn = self.connect()
-            if params:
-                return conn.execute(query, params).df()
-            return conn.execute(query).df()
+            df = conn.execute(query, params).df() if params else conn.execute(query).df()
+            # datetime64 columns can't store None — they coerce it back to NaT.
+            # Upcast them to object first so NaT becomes a real None.
+            for col in df.select_dtypes(include=["datetime64", "datetimetz"]).columns:
+                df[col] = df[col].astype(object).where(df[col].notna(), other=None)
+            return df.where(pd.notna(df), other=None)
         except Exception as e:
             if isinstance(e, DatabaseError):
                 raise

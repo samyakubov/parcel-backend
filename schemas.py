@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
 
+COOP_PROPERTY_TYPES: frozenset[str] = frozenset(
+    {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
+)
+
 
 @dataclass
 class APIKeyConfig:
@@ -20,6 +24,7 @@ class APIKeyConfig:
         updated_at (datetime): The timestamp when the API key was last updated.
         last_used_at (Optional[datetime]): The timestamp when the API key was last used.
     """
+
     id: int
     key: str
     name: str
@@ -31,6 +36,7 @@ class APIKeyConfig:
 
 class CreateAPIKeyResponse(BaseModel):
     """Response model for creating a new API key."""
+
     id: int
     key: str
     name: str
@@ -40,6 +46,7 @@ class CreateAPIKeyResponse(BaseModel):
 
 class APIKeyListItem(BaseModel):
     """Response model for listing an API key."""
+
     id: int
     name: str
     enabled: bool
@@ -50,17 +57,20 @@ class APIKeyListItem(BaseModel):
 
 class UpdateAPIKeyRequest(BaseModel):
     """Request model for updating an API key."""
+
     name: str | None = None
     enabled: bool | None = None
 
 
 class MessageResponse(BaseModel):
     """Response model for a simple message."""
+
     message: str
 
 
 class PropertyRecord(BaseModel):
     """model for a raw property record"""
+
     documentid: str
     bbl: str
     amount: float
@@ -128,7 +138,11 @@ class PropertyRecord(BaseModel):
         return v
 
     @field_validator(
-        "num_floors", "lot_front", "lot_depth", "bldg_front", "bldg_depth",
+        "num_floors",
+        "lot_front",
+        "lot_depth",
+        "bldg_front",
+        "bldg_depth",
         mode="before",
     )
     @classmethod
@@ -153,10 +167,26 @@ class PropertyRecord(BaseModel):
         return v
 
     @field_validator(
-        "school_dist", "council", "land_use", "lot_area", "bldg_area", "com_area",
-        "res_area", "office_area", "retail_area", "garage_area", "strge_area",
-        "factry_area", "other_area", "num_bldgs", "units_res", "units_total",
-        "assess_land", "assess_tot", "exempt_tot", "year_built",
+        "school_dist",
+        "council",
+        "land_use",
+        "lot_area",
+        "bldg_area",
+        "com_area",
+        "res_area",
+        "office_area",
+        "retail_area",
+        "garage_area",
+        "strge_area",
+        "factry_area",
+        "other_area",
+        "num_bldgs",
+        "units_res",
+        "units_total",
+        "assess_land",
+        "assess_tot",
+        "exempt_tot",
+        "year_built",
         mode="before",
     )
     @classmethod
@@ -234,7 +264,7 @@ class Violation(BaseModel):
 
     bbl: str
     violation_status: str
-    issue_date: str
+    issue_date: str | None = None
     violation_type: str
     description: str | None = None
     severity: str
@@ -368,6 +398,7 @@ class Coordinates(BaseModel):
 
 class MortgageRecord(BaseModel):
     """Represents a mortgage record."""
+
     lender: str
     borrower: str
     amount: float
@@ -375,6 +406,7 @@ class MortgageRecord(BaseModel):
 
 class PropertyDetailsResponse(BaseModel):
     """Response model for a single property's details."""
+
     last_sold: LastSold | None = None
     mortgage: MortgageRecord | None = None
     owners: Owners
@@ -388,6 +420,7 @@ class PropertyDetailsResponse(BaseModel):
 
 class PartySearchResponse(BaseModel):
     """Response model for searching by party name - returns all properties associated with the person."""
+
     properties: list[PropertyDetailsResponse]
 
 
@@ -398,26 +431,32 @@ class ConversationMessage(BaseModel):
 
 class AskRequest(BaseModel):
     """Request model for asking the AI a question."""
+
     question: str
     conversation_history: list[ConversationMessage] = []
 
 
 class AskResponse(BaseModel):
     """Response model for the AI's answer."""
+
     response: str
     property_data: PropertyDetailsResponse | None = None
     updated_history: list[ConversationMessage] = []
+
 
 class CensusGeoCodeResponse(TypedDict):
     """
     Response from the Census Bureau's geocoding API containing geographic identifiers.
     """
+
     tract: str
+
 
 class RaceDemographic(BaseModel):
     """
     Demographic data for a single race or ethnicity category.
     """
+
     label: str
     value: int
 
@@ -426,6 +465,7 @@ class CensusDemographicData(TypedDict):
     """
     Demographic and economic data from the U.S. Census Bureau's American Community Survey (ACS).
     """
+
     population: int | None
     medianIncome: int | None
     medianHomeValue: int | None
@@ -438,6 +478,7 @@ class ZipCodeHeatmapItem(BaseModel):
     """
     Represents aggregated heatmap data for a single ZIP code.
     """
+
     zip_code: str
     num_sales: int
     median_price: float
@@ -449,6 +490,7 @@ class HeatmapResponse(BaseModel):
     """
     Response model for the ZIP code heatmap endpoint.
     """
+
     data: list[ZipCodeHeatmapItem]
     start_date: str | None = None
     end_date: str | None = None
