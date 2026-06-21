@@ -391,15 +391,22 @@ class PartySearchResponse(BaseModel):
     properties: list[PropertyDetailsResponse]
 
 
+class ConversationMessage(BaseModel):
+    role: str  # "user" | "assistant" | "tool"
+    content: str
+
+
 class AskRequest(BaseModel):
     """Request model for asking the AI a question."""
     question: str
+    conversation_history: list[ConversationMessage] = []
 
 
 class AskResponse(BaseModel):
     """Response model for the AI's answer."""
     response: str
     property_data: PropertyDetailsResponse | None = None
+    updated_history: list[ConversationMessage] = []
 
 class CensusGeoCodeResponse(TypedDict):
     """
