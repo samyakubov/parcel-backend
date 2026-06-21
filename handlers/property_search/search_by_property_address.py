@@ -1,20 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
 
-import pandas as pd
-
 from database_connector import DatabaseConnector
 from exceptions.property_search_exceptions import (
     AddressNotFoundError,
     InvalidAddressError,
 )
-from handlers.property_search.helper_functions.get_building_shareholders import (
-    get_building_shareholders,
-)
 from handlers.property_search.helper_functions.get_complaints import (
     get_complaints,
-)
-from handlers.property_search.helper_functions.get_current_home_owner import (
-    get_current_home_owner,
 )
 from handlers.property_search.helper_functions.get_job_filings import (
     get_job_filings,
@@ -23,13 +15,11 @@ from handlers.property_search.helper_functions.get_last_sold import (
     get_last_sold,
 )
 from handlers.property_search.helper_functions.get_mortgage import get_mortgage
-from handlers.property_search.helper_functions.get_previous_owners import (
-    get_previous_home_owners,
-)
+from handlers.property_search.helper_functions.get_owners import get_owners
 from handlers.property_search.helper_functions.get_zoning import get_zoning
 from handlers.property_search.helper_functions.standardize_address_for_database import standardize_address
 from logger_config import logger
-from schemas import Owners, PropertyDetailsResponse, Violation
+from schemas import COOP_PROPERTY_TYPES, PropertyDetailsResponse, Violation
 from services.geolocation.address_to_coord import address_to_coord
 
 
@@ -66,10 +56,6 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             [address.upper()],
         )
         records_df = records_df.loc[:, ~records_df.columns.duplicated()]
-
-        current_owner_data = []
-
-        coop_property_types = {"MULTIPLE RESIDENTIAL COOP UNIT", "APARTMENT BUILDING", "SINGLE RESIDENTIAL COOP UNIT"}
 
         if records_df.empty:
             logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
@@ -118,28 +104,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             [house_num, street_name]
         )
 
-        phone_numbers_df = pd.DataFrame()
-        if not jobs_df.empty:
-            potential_cols = {
-                "ownername": "owner_full_name",
-                "OwnersPhone": "owners_phone"
-            }
-            cols_to_use = [c for c in potential_cols.keys() if c in jobs_df.columns]
-            if len(cols_to_use) == 2:
-                phone_numbers_df = jobs_df[cols_to_use].rename(columns=potential_cols)
-
-
-        if prop_type in coop_property_types:
-            current_owner_data = get_building_shareholders(bbl, records_df)
-
-        if len(current_owner_data) == 0:
-            current_owner_data = get_current_home_owner(bbl, records_df, phone_numbers_df)
-
-        all_previous_data = get_previous_home_owners(bbl, records_df, phone_numbers_df)
-        owners = Owners(
-            current_owners=current_owner_data,
-            previous_owners=[item for item in all_previous_data if item not in current_owner_data],
-        )
+        owners, _ = get_owners(bbl, records_df, jobs_df)
 
         try:
             coordinates = future_coords.result(timeout=5)
@@ -149,7 +114,7 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
 
         executor.shutdown(wait=False)
 
-        last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in coop_property_types else None
+        last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in COOP_PROPERTY_TYPES else None
 
         return PropertyDetailsResponse(
             last_sold=last_sold,

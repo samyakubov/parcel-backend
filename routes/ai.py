@@ -14,7 +14,7 @@ async def ask_ai(request: AskRequest, db: DatabaseConnector = Depends(get_db)):
     """
     try:
         agent = LLMAgent(db)
-        response = agent.ask(request.question)
+        response = agent.ask(request.question, request.conversation_history)
         return response
     except Exception as e:
         logger.error(f"Error in /ai/ask: {e}", exc_info=True)
