@@ -205,8 +205,8 @@ class PropertyRecord(BaseModel):
 class LastSold(BaseModel):
     """Response model for a last sold message."""
 
-    last_sold_price: int
-    last_sold_date: str  # Changed from Timestamp to str
+    last_sold_price: int | None = None
+    last_sold_date: str | None = None
     year_built: int | None = None
     land_sqft: int | None = None
     gross_sqft: int | None = None

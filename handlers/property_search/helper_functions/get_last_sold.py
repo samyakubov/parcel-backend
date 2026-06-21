@@ -30,13 +30,16 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
         elif deed_date:
             price, date = deed_price, deed_date
         else:
-            return None
+            price, date = None, None
 
         # Stats: DOF sales first, PLUTO as fallback
         sale_stats = sale or {}
         year_built, land_sqft, gross_sqft = (
             sale_stats.get(k) or pluto.get(k) for k in ("year_built", "land_sqft", "gross_sqft")
         )
+
+        if not any([price, date, year_built, land_sqft, gross_sqft]):
+            return None
 
         return LastSold(
             last_sold_price=price,
