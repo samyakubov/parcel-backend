@@ -1,7 +1,23 @@
+import difflib
+
 import pandas as pd
 
 from logger_config import logger
 from utils.match_phone_numbers_to_owner import match_phone_numbers_to_owner
+
+NAME_SIMILARITY_THRESHOLD = 0.9
+
+
+def _dedupe_similar_owners(owners: list[str]) -> list[str]:
+    """Dedupes owner names, collapsing near-identical spellings (e.g. typos in source records)."""
+    unique: list[str] = []
+    for owner in owners:
+        if not any(
+            difflib.SequenceMatcher(None, owner, existing).ratio() >= NAME_SIMILARITY_THRESHOLD
+            for existing in unique
+        ):
+            unique.append(owner)
+    return unique
 
 
 def get_previous_home_owners(
@@ -43,8 +59,7 @@ def get_previous_home_owners(
         if not deed_records.empty:
             logger.info(f"Found {len(deed_records)} deed records for BBL {bbl}")
             deed_owners = deed_records["party_name"].tolist()
-            seen = set()
-            unique_owners = [owner for owner in deed_owners if not (owner in seen or seen.add(owner))]
+            unique_owners = _dedupe_similar_owners(deed_owners)
             logger.info(
                 f"--------------------Found {len(unique_owners)} unique previous owner(s) from deed records for BBL {bbl}--------------------\n"
             )
@@ -69,8 +84,7 @@ def get_previous_home_owners(
 
             if not mortgage_records.empty:
                 mortgage_owners = mortgage_records["party_name"].tolist()
-                seen = set()
-                unique_owners = [owner for owner in mortgage_owners if not (owner in seen or seen.add(owner))]
+                unique_owners = _dedupe_similar_owners(mortgage_owners)
                 logger.info(
                     f"--------------------Found {len(unique_owners)} unique previous owner(s) from mortgage records for BBL {bbl}--------------------\n"
                 )

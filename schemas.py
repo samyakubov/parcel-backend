@@ -75,8 +75,6 @@ class PropertyRecord(BaseModel):
     bbl: str
     amount: float
     prop_borough: int
-    prop_block: int
-    prop_lot: int
     prop_unit: str | None = None
     prop_streetnumber: str
     prop_streetname: str
@@ -93,13 +91,38 @@ class PropertyRecord(BaseModel):
     party_zip: str | None = None
     doc_type: str | None = None
     record_filed: str
+
+    @field_validator("record_filed", mode="before")
+    @classmethod
+    def convert_timestamp(cls, v):
+        """Convert pandas Timestamp to string"""
+        if isinstance(v, pd.Timestamp):
+            return v.strftime("%Y-%m-%d")
+        return v
+
+    @field_validator("amount", mode="before")
+    @classmethod
+    def convert_nan_amount(cls, v):
+        """Convert NaN amount to 0.0 (amount is a required non-optional float)"""
+        try:
+            if pd.isna(v):
+                return 0.0
+        except (TypeError, ValueError):
+            pass
+        return v
+
+
+class BuildingCharacteristics(BaseModel):
+    """Building/lot characteristics for a property. One per BBL, not per record."""
+
+    prop_block: int
+    prop_lot: int
+    address: str | None = None
     school_dist: int | None = None
     council: int | None = None
     zipcode: str | None = None
     police_prct: str | None = None
     land_use: int | None = None
-    owner_type: str | None = None
-    owner_name: str | None = None
     lot_area: int | None = None
     bldg_area: int | None = None
     com_area: int | None = None
@@ -127,15 +150,6 @@ class PropertyRecord(BaseModel):
     assess_land: int | None = None
     assess_tot: int | None = None
     exempt_tot: int | None = None
-    year_built: int | None = None
-
-    @field_validator("record_filed", mode="before")
-    @classmethod
-    def convert_timestamp(cls, v):
-        """Convert pandas Timestamp to string"""
-        if isinstance(v, pd.Timestamp):
-            return v.strftime("%Y-%m-%d")
-        return v
 
     @field_validator(
         "num_floors",
@@ -151,17 +165,6 @@ class PropertyRecord(BaseModel):
         try:
             if pd.isna(v):
                 return None
-        except (TypeError, ValueError):
-            pass
-        return v
-
-    @field_validator("amount", mode="before")
-    @classmethod
-    def convert_nan_amount(cls, v):
-        """Convert NaN amount to 0.0 (amount is a required non-optional float)"""
-        try:
-            if pd.isna(v):
-                return 0.0
         except (TypeError, ValueError):
             pass
         return v
@@ -186,7 +189,6 @@ class PropertyRecord(BaseModel):
         "assess_land",
         "assess_tot",
         "exempt_tot",
-        "year_built",
         mode="before",
     )
     @classmethod
@@ -410,6 +412,7 @@ class PropertyDetailsResponse(BaseModel):
     last_sold: LastSold | None = None
     mortgage: MortgageRecord | None = None
     owners: Owners
+    building_characteristics: BuildingCharacteristics | None = None
     records: list[PropertyRecord]
     job_filings: list[JobFiled]
     violations: list[Violation]
