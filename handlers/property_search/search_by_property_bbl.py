@@ -11,7 +11,6 @@ from handlers.property_search.helper_functions.add_ordinal_to_street_number impo
     add_ordinal_to_street_number,
 )
 from handlers.property_search.helper_functions.get_building_characteristics import (
-    BUILDING_CHARACTERISTICS_FIELDS,
     get_building_characteristics,
 )
 from handlers.property_search.helper_functions.get_complaints import (
@@ -56,8 +55,7 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
 
     try:
         logger.info(f"Starting property search for BBL: '{bbl}'")
-        records_df = db.execute_df("SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.bbl = ? ORDER BY a.documentid", [bbl])
-        records_df = records_df.loc[:, ~records_df.columns.duplicated()]
+        records_df = db.execute_df("SELECT * FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid", [bbl])
 
         if records_df.empty:
             logger.warning(f"No records found for BBL: '{bbl}'")
@@ -84,6 +82,8 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
 
         jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
+
+        pluto_df = db.execute_df("SELECT * FROM pluto_latest WHERE bbl = ?", [bbl])
 
         violations_df = db.execute_df(
             """SELECT bbl, violation_status, issue_date, violation_type, description, severity, 
@@ -121,18 +121,15 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
 
         executor.shutdown(wait=False)
 
-        last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in COOP_PROPERTY_TYPES else None
-        building_characteristics = get_building_characteristics(records_df)
-        record_fields_df = records_df.drop(
-            columns=[*BUILDING_CHARACTERISTICS_FIELDS, "year_built", "owner_name", "owner_type"], errors="ignore"
-        )
+        last_sold = get_last_sold(bbl, sales_df, records_df, pluto_df) if prop_type not in COOP_PROPERTY_TYPES else None
+        building_characteristics = get_building_characteristics(records_df, pluto_df)
 
         return PropertyDetailsResponse(
             last_sold = last_sold if prop_type not in COOP_PROPERTY_TYPES or should_get_last_sold_for_buildings else None,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
             building_characteristics=building_characteristics,
-            records=record_fields_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, complaints_df),

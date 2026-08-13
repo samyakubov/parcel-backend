@@ -103,10 +103,8 @@ def get_tools(db: DatabaseConnector) -> tuple[list, dict]:
         """
         try:
             acris_df = db.execute_df(
-                "SELECT a.doc_type, a.amount, a.partytype_desc, a.party_name, a.record_filed, a.prop_type,"
-                " p.year_built, p.lot_area, p.bldg_area"
-                " FROM aggregated_acris_records a"
-                " LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.bbl = ? ORDER BY a.documentid",
+                "SELECT doc_type, amount, partytype_desc, party_name, record_filed, prop_type"
+                " FROM aggregated_acris_records WHERE bbl = ? ORDER BY documentid",
                 [bbl],
             )
             if acris_df.empty:
@@ -117,7 +115,8 @@ def get_tools(db: DatabaseConnector) -> tuple[list, dict]:
                 return "Last sold data is not tracked for co-op properties."
 
             sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
-            result = get_last_sold(bbl, sales_df, acris_df)
+            pluto_df = db.execute_df("SELECT year_built, lot_area, bldg_area FROM pluto_latest WHERE bbl = ?", [bbl])
+            result = get_last_sold(bbl, sales_df, acris_df, pluto_df)
             if result is None:
                 return f"No sale data found for BBL {bbl}."
             return json.dumps(result.model_dump())

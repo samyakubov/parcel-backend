@@ -5,7 +5,7 @@ from logger_config import logger
 from schemas import LastSold
 
 
-def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> LastSold | None:
+def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame, pluto_df: pd.DataFrame) -> LastSold | None:
     if not isinstance(bbl, str) or not bbl.strip():
         raise InvalidBBLError
     try:
@@ -13,7 +13,7 @@ def get_last_sold(bbl: str, sales_df: pd.DataFrame, acris_df: pd.DataFrame) -> L
 
         sale = _get_dof_sale(sales_df)
         deed = _get_best_deed_price(acris_df)
-        pluto = _get_pluto_stats(acris_df)
+        pluto = _get_pluto_stats(pluto_df)
 
         sale_price = sale["price"] if sale else None
         sale_date = sale["date"] if sale else None
@@ -117,10 +117,10 @@ def _price_from_mortgage(deeds: pd.DataFrame, acris_df: pd.DataFrame) -> tuple[i
     return int(row["amount"]), row["record_filed"]
 
 
-def _get_pluto_stats(acris_df: pd.DataFrame) -> dict:
-    if acris_df.empty:
+def _get_pluto_stats(pluto_df: pd.DataFrame) -> dict:
+    if pluto_df.empty:
         return {}
-    row = acris_df.iloc[0]
+    row = pluto_df.iloc[0]
     return {
         "year_built": _safe_int(row.get("year_built")),
         "land_sqft": _safe_int(row.get("lot_area")),

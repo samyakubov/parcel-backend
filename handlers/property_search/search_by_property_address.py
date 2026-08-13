@@ -6,7 +6,6 @@ from exceptions.property_search_exceptions import (
     InvalidAddressError,
 )
 from handlers.property_search.helper_functions.get_building_characteristics import (
-    BUILDING_CHARACTERISTICS_FIELDS,
     get_building_characteristics,
 )
 from handlers.property_search.helper_functions.get_complaints import (
@@ -56,10 +55,9 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             f"--------------------------Starting property search for address: '{address}'--------------------------"
         )
         records_df = db.execute_df(
-            "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.search_prop_address = ? ORDER BY a.documentid",
+            "SELECT * FROM aggregated_acris_records WHERE search_prop_address = ? ORDER BY documentid",
             [address.upper()],
         )
-        records_df = records_df.loc[:, ~records_df.columns.duplicated()]
 
         if records_df.empty:
             logger.info(f"No exact match found for address '{address}'. Trying a more lenient search.")
@@ -67,10 +65,9 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
             if len(parts) == 2:
                 house_number, street = parts
                 records_df = db.execute_df(
-                    "SELECT a.*, p.* FROM aggregated_acris_records a LEFT JOIN pluto_latest p ON a.bbl = p.bbl WHERE a.prop_streetnumber = ? AND a.prop_streetname LIKE ? ORDER BY a.documentid",
+                    "SELECT * FROM aggregated_acris_records WHERE prop_streetnumber = ? AND prop_streetname LIKE ? ORDER BY documentid",
                     [house_number, f"{street.replace(' ', '%').upper()}%"],
                 )
-                records_df = records_df.loc[:, ~records_df.columns.duplicated()]
 
             if records_df.empty:
                 logger.warning(f"No records found for address: '{address}' after lenient search.")
@@ -88,6 +85,8 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         sales_df = db.execute_df("SELECT * FROM aggregated_dof_sales WHERE bbl = ?", [bbl])
 
         jobs_df = db.execute_df("SELECT * FROM dobjobs WHERE bbl = ?", [bbl])
+
+        pluto_df = db.execute_df("SELECT * FROM pluto_latest WHERE bbl = ?", [bbl])
         logger.info(f"--------------------Retrieving violations for BBL: {bbl}--------------------")
 
         violations_df = db.execute_df(
@@ -118,18 +117,15 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
 
         executor.shutdown(wait=False)
 
-        last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in COOP_PROPERTY_TYPES else None
-        building_characteristics = get_building_characteristics(records_df)
-        record_fields_df = records_df.drop(
-            columns=[*BUILDING_CHARACTERISTICS_FIELDS, "year_built", "owner_name", "owner_type"], errors="ignore"
-        )
+        last_sold = get_last_sold(bbl, sales_df, records_df, pluto_df) if prop_type not in COOP_PROPERTY_TYPES else None
+        building_characteristics = get_building_characteristics(records_df, pluto_df)
 
         return PropertyDetailsResponse(
             last_sold=last_sold,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
             building_characteristics=building_characteristics,
-            records=record_fields_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(address, complaints_df),
