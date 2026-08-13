@@ -10,6 +10,10 @@ from exceptions.property_search_exceptions import (
 from handlers.property_search.helper_functions.add_ordinal_to_street_number import (
     add_ordinal_to_street_number,
 )
+from handlers.property_search.helper_functions.get_building_characteristics import (
+    BUILDING_CHARACTERISTICS_FIELDS,
+    get_building_characteristics,
+)
 from handlers.property_search.helper_functions.get_complaints import (
     get_complaints,
 )
@@ -118,12 +122,17 @@ def search_by_property_bbl(bbl: str, db: DatabaseConnector) -> PropertyDetailsRe
         executor.shutdown(wait=False)
 
         last_sold = get_last_sold(bbl, sales_df, records_df) if prop_type not in COOP_PROPERTY_TYPES else None
+        building_characteristics = get_building_characteristics(records_df)
+        record_fields_df = records_df.drop(
+            columns=[*BUILDING_CHARACTERISTICS_FIELDS, "year_built", "owner_name", "owner_type"], errors="ignore"
+        )
 
         return PropertyDetailsResponse(
             last_sold = last_sold if prop_type not in COOP_PROPERTY_TYPES or should_get_last_sold_for_buildings else None,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
-            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            building_characteristics=building_characteristics,
+            records=record_fields_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(records_df.iloc[0].prop_streetnumber + " " + records_df.iloc[0].prop_streetname, complaints_df),
