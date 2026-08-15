@@ -26,12 +26,18 @@ from schemas import COOP_PROPERTY_TYPES, PropertyDetailsResponse, Violation
 from services.geolocation.address_to_coord import address_to_coord
 
 
-def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyDetailsResponse:
+def search_by_property_address(
+    address: str, db: DatabaseConnector, record_filter: list[str] | None = None
+) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
         address: The address of the property to search for.
         db: The database connector instance.
+        record_filter (list[str] | None): Optional list of doc_type values to restrict the
+            returned `records` field to. Applied only to the final records output, not to any
+            of the intermediate dataframes used to derive owners, last_sold, mortgage, or
+            building_characteristics.
 
     Raises:
         InvalidAddressError: If the address is invalid.
@@ -120,12 +126,16 @@ def search_by_property_address(address: str, db: DatabaseConnector) -> PropertyD
         last_sold = get_last_sold(bbl, sales_df, records_df, pluto_df) if prop_type not in COOP_PROPERTY_TYPES else None
         building_characteristics = get_building_characteristics(records_df, pluto_df)
 
+        output_records_df = records_df.sort_values(by="record_filed", ascending=False)
+        if record_filter:
+            output_records_df = output_records_df[output_records_df["doc_type"].isin(record_filter)]
+
         return PropertyDetailsResponse(
             last_sold=last_sold,
             owners=owners,
             mortgage=get_mortgage(records_df, last_sold),
             building_characteristics=building_characteristics,
-            records=records_df.sort_values(by="record_filed", ascending=False).to_dict(orient="records"),
+            records=output_records_df.to_dict(orient="records"),
             job_filings=get_job_filings(bbl, jobs_df),
             violations=[Violation(**row) for row in violations_df.to_dict(orient="records")],
             complaints=get_complaints(address, complaints_df),

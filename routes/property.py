@@ -19,17 +19,22 @@ property_routes = APIRouter(prefix="/property")
     dependencies=[Depends(validate_api_key)],
     response_model=PropertyDetailsResponse,
 )
-def search_by_address(address: str, db: DatabaseConnector = Depends(get_db)) -> PropertyDetailsResponse:
+def search_by_address(
+    address: str, record_filter: str | None = None, db: DatabaseConnector = Depends(get_db)
+) -> PropertyDetailsResponse:
     """Searches for a property by its address.
 
     Args:
         address (str): The address of the property to search for.
+        record_filter (str | None): Optional comma-separated list of doc_type values
+            (e.g. "DEED,MORTGAGE") to restrict the returned `records` field to.
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
         PropertyDetailsResponse: A response object containing the property information.
     """
-    return search_by_property_address(address, db)
+    filter_list = [v.strip() for v in record_filter.split(",") if v.strip()] if record_filter else None
+    return search_by_property_address(address, db, filter_list)
 
 
 @property_routes.get(
@@ -37,17 +42,22 @@ def search_by_address(address: str, db: DatabaseConnector = Depends(get_db)) -> 
     dependencies=[Depends(validate_api_key)],
     response_model=PropertyDetailsResponse,
 )
-def search_by_bbl(bbl: str, db: DatabaseConnector = Depends(get_db)) -> PropertyDetailsResponse:
+def search_by_bbl(
+    bbl: str, record_filter: str | None = None, db: DatabaseConnector = Depends(get_db)
+) -> PropertyDetailsResponse:
     """Searches for a property by its BBL (Borough, Block, Lot).
 
     Args:
         bbl (str): The BBL of the property to search for.
+        record_filter (str | None): Optional comma-separated list of doc_type values
+            (e.g. "DEED,MORTGAGE") to restrict the returned `records` field to.
         db (DatabaseConnector, optional): The database connector. Defaults to Depends(get_db).
 
     Returns:
         PropertyDetailsResponse: A response object containing the property information.
     """
-    return search_by_property_bbl(bbl, db)
+    filter_list = [v.strip() for v in record_filter.split(",") if v.strip()] if record_filter else None
+    return search_by_property_bbl(bbl, db, filter_list)
 
 
 @property_routes.get(
