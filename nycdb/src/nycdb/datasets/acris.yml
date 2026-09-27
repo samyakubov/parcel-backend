@@ -1,0 +1,152 @@
+---
+files:
+  -
+    url: https://data.cityofnewyork.us/api/views/8h5j-fqxa/rows.csv?accessType=DOWNLOAD
+    dest: acris_real_property_legals.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/bnx9-e6tj/rows.csv?accessType=DOWNLOAD
+    dest: acris_real_property_master.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/636b-3b5g/rows.csv?accessType=DOWNLOAD
+    dest: acris_real_property_parties.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/uqqa-hym2/rows.csv?accessType=DOWNLOAD
+    dest: acris_personal_property_legals.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/sv7x-dduq/rows.csv?accessType=DOWNLOAD
+    dest: acris_personal_property_master.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/nbbg-wtuz/rows.csv?accessType=DOWNLOAD
+    dest: acris_personal_property_parties.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/7isb-wh4c/rows.csv?accessType=DOWNLOAD
+    dest: acris_document_control_codes.csv
+  -
+    url: https://data.cityofnewyork.us/api/views/94g4-w6xz/rows.csv?accessType=DOWNLOAD
+    dest: acris_property_type_codes.csv
+sql:
+  - acris.sql
+schema:
+  -
+    table_name: real_property_legals
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      BOROUGH: smallint
+      BLOCK: integer
+      LOT: integer
+      EASEMENT: boolean
+      PARTIALLOT: char(1)
+      AIRRIGHTS: boolean
+      SUBTERRANEANRIGHTS: boolean
+      PROPERTYTYPE: char(2)
+      STREETNUMBER: text
+      STREETNAME: text
+      UNIT: text
+      GOODTHROUGHDATE: date
+  -
+    table_name: real_property_master
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      CRFN: text
+      BOROUGH: char(1)
+      DOCTYPE: text
+      DOCDATE: date
+      DOCAMOUNT: bigint
+      RECORDEDFILED: date
+      MODIFIEDDATE: date
+      REELYEAR: smallint
+      REELNBR: integer
+      REELPAGE: integer
+      PCTTRANSFERRED: numeric
+      GOODTHROUGHDATE: date
+  -
+    table_name: real_property_parties
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      PARTYTYPE: smallint
+      NAME: text
+      ADDRESS1: text
+      ADDRESS2: text
+      COUNTRY: text
+      CITY: text
+      STATE: text
+      ZIP: text
+      GOODTHROUGHDATE: date
+  -
+    table_name: personal_property_legals
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      BOROUGH: smallint
+      BLOCK: integer
+      LOT: integer
+      EASEMENT: boolean
+      PARTIALLOT: char(1)
+      AIRRIGHTS: boolean
+      SUBTERRANEANRIGHTS: boolean
+      PROPERTYTYPE: char(2)
+      STREETNUMBER: text
+      STREETNAME: text
+      UNIT: text
+      GOODTHROUGHDATE: date
+  -
+    table_name: personal_property_master
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      CRFN:  text
+      BOROUGH: smallint
+      DOCTYPE: text
+      DOCAMOUNT: bigint
+      RECORDEDFILED: date
+      COLLATERAL: char(1)
+      SLID: text
+      ASSESSMENTDATE: date
+      RPTT: integer
+      MODIFIEDDATE: date
+      REELYEAR: smallint
+      REELNBR: integer
+      REELPAGE: integer
+      FILENUMBER: integer
+      GOODTHROUGHDATE: date
+  -
+    table_name: personal_property_parties
+    verify_count: 1_000_000
+    fields:
+      DOCUMENTID: text
+      RECORDTYPE: char(1)
+      PARTYTYPE: smallint
+      NAME: text
+      ADDRESS1: text
+      ADDRESS2: text
+      COUNTRY: text
+      CITY: text
+      STATE: text
+      ZIP: text
+      GOODTHROUGHDATE: date
+  -
+    table_name: acris_document_control_codes
+    verify_count: 123
+    fields:
+        RECORDTYPE: char(1)
+        DOCTYPE: text
+        DOCTYPEDESCRIPTION: text
+        CLASSCODEDESCRIPTION: text
+        PARTY1TYPE: text
+        PARTY2TYPE: text
+        PARTY3TYPE: text
+  -
+    table_name: acris_property_type_codes
+    verify_count: 46
+    fields:
+        RECORDTYPE: char(1)
+        PROPERTYTYPE: char(2)
+        DESCRIPTION: text

@@ -10,3 +10,4 @@ __pycache__/
 /parcel-aws-server.pem
 /data/
 /graphify-out/
+.DS_Store

@@ -1,0 +1,26 @@
+---
+files:
+  -
+    url: https://data.cityofnewyork.us/api/views/eabe-havv/rows.csv?accessType=DOWNLOAD
+    dest: dob_complaints.csv
+schema:
+  table_name: dob_complaints
+  verify_count: 1_000_000
+  fields:
+    complaintnumber: integer
+    status: text
+    dateentered: date
+    housenumber: text
+    zipcode: text
+    housestreet: text
+    bin: char(7)
+    communityboard: integer
+    specialdistrict: text
+    complaintcategory: text
+    unit: text
+    dispositiondate: date
+    dispositioncode: text
+    inspectiondate: date
+    dobrundate: date
+sql:
+  - dob_complaints.sql

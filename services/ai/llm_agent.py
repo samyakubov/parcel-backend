@@ -29,7 +29,7 @@ class LLMAgent:
     def __init__(self, db: DatabaseConnector):
         self.db = db
         self.llm = ChatOpenAI(
-            model="openai/gpt-oss-120b:free",
+            model="nvidia/nemotron-3.5-lightning:free",
             openai_api_key=os.environ["OPENAI_API_KEY"],
             openai_api_base="https://openrouter.ai/api/v1",
             temperature=0,
