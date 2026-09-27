@@ -1,19 +1,19 @@
 -- bbl
-create index on dobjobs (bbl);
+create index dobjobs_bbl_idx on dobjobs (bbl);
 -- bin
-create index on dobjobs (bin);
--- Latest Action Date 
-create index on dobjobs (LatestActionDate DESC NULLS LAST);
-create index on dobjobs (LatestActionDate DESC);	
+create index dobjobs_bin_idx on dobjobs (bin);
+-- Latest Action Date
+create index dobjobs_latestactiondate_idx on dobjobs (LatestActionDate DESC NULLS LAST);
+create index dobjobs_latestactiondate_desc_idx on dobjobs (LatestActionDate DESC);
 -- jobtype
-create index on dobjobs (JobType);
+create index dobjobs_jobtype_idx on dobjobs (JobType);
 -- job status
-create index on dobjobs (JobStatus);
+create index dobjobs_jobstatus_idx on dobjobs (JobStatus);
 -- community board
-create index on dobjobs (CommunityBoard);
+create index dobjobs_communityboard_idx on dobjobs (CommunityBoard);
 -- existing/proposed # of stories
-create index on dobjobs (ExistingNoofStories);
-create index on dobjobs (ProposedNoofStories);
+create index dobjobs_existingnoofstories_idx on dobjobs (ExistingNoofStories);
+create index dobjobs_proposednoofstories_idx on dobjobs (ProposedNoofStories);
 
 create index dob_now_jobs_bbl on dob_now_jobs (bbl);
 create index dob_now_jobs_bin on dob_now_jobs (bin);

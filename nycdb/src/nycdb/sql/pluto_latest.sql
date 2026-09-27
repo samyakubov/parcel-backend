@@ -20,9 +20,8 @@ UPDATE pluto_latest SET landusedesc = CASE
       ELSE '9999'
       END;
 ALTER TABLE pluto_latest ADD COLUMN latitudelongitudegeom geometry;
-UPDATE pluto_latest SET latitudelongitudegeom = ST_Point(longitude, latitude, 4326);
+UPDATE pluto_latest SET latitudelongitudegeom = ST_Point(longitude, latitude);
 CREATE INDEX pluto_latest_bbl_idx on pluto_latest (bbl);
 CREATE INDEX pluto_latest_ownername_idx on pluto_latest (ownername);
-CREATE INDEX pluto_latest_bct2020_idx on pluto_latest (bct2020);
 CREATE INDEX pluto_latest_latitutde_longitude_idx on pluto_latest (latitude, longitude);
-CREATE INDEX pluto_latest_latitutde_longitude_st_point_gist_idx ON pluto_latest USING GIST (latitudelongitudegeom);
+CREATE INDEX pluto_latest_latitudelongitudegeom_idx ON pluto_latest USING RTREE (latitudelongitudegeom);

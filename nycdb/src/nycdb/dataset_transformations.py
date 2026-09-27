@@ -40,11 +40,40 @@ def dof_sales(dataset):
 
 
 def dobjobs(dataset):
-    return with_bbl(to_csv(dataset.files[0].dest))
+    # Open Data renamed the GIS columns. The table still uses the old names.
+    return with_bbl(
+        to_csv(
+            dataset.files[0].dest,
+            header_replacements={
+                "latitude": "gislatitude",
+                "longitude": "gislongitude",
+                "councildistrict": "giscouncildistrict",
+                "censustract": "giscensustract",
+                "nta": "gisntaname",
+            },
+        )
+    )
 
 
 def dob_now_jobs(dataset):
-    return with_bbl(skip_fields(to_csv(dataset.files[1].dest), [s.lower() for s in dataset.schemas[1]["skip"]]))
+    # Work-type columns are now named "Standpipe (Work Type)" and similar.
+    return with_bbl(
+        skip_fields(
+            to_csv(
+                dataset.files[1].dest,
+                header_replacements={
+                    "standpipeworktype": "standpipe",
+                    "antennaworktype": "antenna",
+                    "signworktype": "sign",
+                    "curbcutworktype": "curbcut",
+                    "fenceworktype": "fence",
+                    "scaffoldworktype": "scaffold",
+                    "shedworktype": "shed",
+                },
+            ),
+            [s.lower() for s in dataset.schemas[1]["skip"]],
+        )
+    )
 
 
 def acris(dataset, schema):

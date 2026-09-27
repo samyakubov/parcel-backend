@@ -204,3 +204,17 @@ schema:
       - CensusTract
       - NTA
       - BIN
+      - ApplicantStreetName
+      - ApplicantCity
+      - ApplicantState
+      - ApplicantZip
+      - GreenRoofWorkType
+      - SolarWorkType
+      - FullDemolitionWorkType
+      - SuspendedScaffoldWorkType
+      - ApplicantBusinessName
+      - OwnerFirstName
+      - OwnerLastName
+      - OwnerType
+      - JobDescription
+      - FilingReviewType

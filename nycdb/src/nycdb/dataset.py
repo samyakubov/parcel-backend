@@ -86,6 +86,11 @@ class Dataset:
                     # Tables without fields are created via SQL and have no data
                     # file to import
                     continue
+                elif self.db.table_exists(schema["table_name"]) and self.db.row_count(schema["table_name"]) > 0:
+                    # A previous load already inserted rows. Importing again would
+                    # duplicate them. SQL files still run below.
+                    logging.info(f"{schema['table_name']} already has rows, skipping import")
+                    continue
                 else:
                     self.import_schema(schema)
 
@@ -150,6 +155,10 @@ class Dataset:
             # Tables without fields are created via the sql script and don't
             # have a data file associated with them.
             if "fields" not in s:
+                continue
+
+            if self.db.table_exists(s["table_name"]):
+                logging.info(f"{s['table_name']} already exists, skipping CREATE TABLE")
                 continue
 
             self.db.sql(sql.create_table(s["table_name"], s["fields"]))

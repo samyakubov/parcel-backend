@@ -92,6 +92,13 @@ schema:
   - ResidFAR
   - CommFAR
   - FacilFAR
+  - affresfar
+  - mnffar
+  - mihopt1
+  - mihopt2
+  - mihopt3
+  - mihopt4
+  - transitzone
   - BoroCode
   - ProxCode
   - IrrLotCode

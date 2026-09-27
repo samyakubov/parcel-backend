@@ -5,6 +5,10 @@ import tempfile
 import duckdb
 
 
+def _quote_ident(name):
+    return '"' + str(name).replace('"', '""') + '"'
+
+
 class Database:
     """
     Database connection. This is a wrapper around duckdb.connect, accessible at .conn
@@ -26,9 +30,12 @@ class Database:
 
     def insert_rows(self, rows, table_name=None):
         """
-        Execute an INSERT statement for the given rows.
-        DuckDB's COPY statement is used for performance.
-        See: https://duckdb.org/docs/sql/statements/copy
+        Insert rows by column name.
+
+        A positional COPY shifts values whenever the row order differs from
+        the table (computed columns such as bbl are appended, and source
+        headers are lowercase). Naming the columns keeps dates and amounts
+        in the fields they belong to.
         """
         if table_name is None:
             table_name = self.table_name
@@ -36,16 +43,24 @@ class Database:
         if not rows:
             return
 
-        # Create a temporary CSV file to bulk-load from
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".csv") as temp:
+        columns = list(rows[0].keys())
+        quoted_columns = ", ".join(_quote_ident(column) for column in columns)
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".csv", newline="") as temp:
             file_path = temp.name
             writer = csv.writer(temp)
-            writer.writerow(rows[0].keys())
+            writer.writerow(columns)
             for row in rows:
                 writer.writerow(row.values())
 
-        self.conn.execute(f"COPY {table_name} FROM '{file_path}' (AUTO_DETECT TRUE, HEADER TRUE)")
-        os.remove(file_path)
+        try:
+            self.conn.execute(
+                f"INSERT INTO {_quote_ident(table_name)} ({quoted_columns}) "
+                "SELECT * FROM read_csv(?, header=true, all_varchar=true, nullstr='')",
+                [file_path],
+            )
+        finally:
+            os.remove(file_path)
 
     def execute_sql_file(self, sql_file):
         """

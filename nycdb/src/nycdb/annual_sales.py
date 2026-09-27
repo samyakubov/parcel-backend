@@ -5,6 +5,8 @@ from os.path import basename, splitext
 import openpyxl  # for xlsx files
 import xlrd  # for xls files
 
+from .file import is_html_file
+
 headers = [
     "borough",
     "neighborhood",
@@ -43,6 +45,12 @@ class AnnualSales:
                 yield dict(zip(headers, row + [self.year], strict=False))
 
     def iter_rows(self):
+        if is_html_file(self.filename):
+            raise ValueError(
+                f"{self.filename} is an HTML error page from nyc.gov, not an Excel file. "
+                "Run `nycdb --download dof_annual_sales` to fetch it again."
+            )
+
         if self.ext == ".xlsx":
             workbook = openpyxl.load_workbook(self.filename)
             worksheet = workbook[workbook.sheetnames[0]]

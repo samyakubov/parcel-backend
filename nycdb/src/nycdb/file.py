@@ -28,6 +28,16 @@ def open_kwargs(dest):
         return open_byte_kwargs
 
 
+def is_html_file(path):
+    """True when a download saved an HTML error page instead of the data file."""
+    try:
+        with open(path, "rb") as f:
+            sample = f.read(64).lstrip().lower()
+    except OSError:
+        return False
+    return sample.startswith((b"<html", b"<!doctype", b"<head"))
+
+
 def safe_int(value):
     """
     Attempt to convert the given value to an integer,
@@ -52,14 +62,19 @@ def download_file(url, dest, hide_progress=False):
     """
     mkdir(dest)
 
-    if Path(dest).exists() and os.stat(dest).st_size > 0:
+    if Path(dest).exists() and os.stat(dest).st_size > 0 and not is_html_file(dest):
         logging.info(f"{url} has already been downloaded, skipping")
         return True
 
     try:
         logging.info(f"Downloading {url} to {dest}")
         is_csv_file = is_csv(dest)
-        r = requests.get(url, stream=True)
+        # nyc.gov answers the default requests user agent with an Access Denied HTML page.
+        r = requests.get(
+            url,
+            stream=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; nycdb/0.4)"},
+        )
         total_bytes = safe_int(r.headers.get("content-length"))
         pbar = tqdm(total=total_bytes, unit="B", unit_scale=True, unit_divisor=1024, disable=hide_progress)
         with open(dest, **open_kwargs(dest)) as f:
@@ -71,7 +86,14 @@ def download_file(url, dest, hide_progress=False):
                     else:
                         f.write(chunk)
         pbar.close()
+        if is_html_file(dest):
+            os.remove(dest)
+            raise DownloadFailedError(
+                f"Download of {url} returned an HTML error page instead of the data file"
+            )
         return True
+    except DownloadFailedError:
+        raise
     except Exception as err:
         raise DownloadFailedError(f"Could not download: {url}") from err
 
